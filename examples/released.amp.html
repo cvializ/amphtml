@@ -31,7 +31,7 @@
 </head>
 <body>
   <h1>Released AMP components</h1>
-  <h2>Responsive image (with lightbox)</h2>
+  <!-- <h2>Responsive image (with lightbox)</h2>
   <p>
     <amp-img
         on="tap:lightbox1"
@@ -46,12 +46,12 @@
   <h2>Hidden image</h2>
   <p>
     <amp-img id="img2" src="https://lh4.googleusercontent.com/-okOlNNHeoOc/VbYyrlFYFII/AAAAAAABYdA/La-3j3c-QQI/w2004-h734-no/PANO_20150726_171347%257E2.jpg" width=527 height=193 layout="nodisplay"></amp-img>
-  </p>
+  </p> -->
 
 
   <section>
     <h2>Media query selection<h2>
-    <amp-img
+    <!-- <amp-img
         media="(min-width: 650px)"
         id="img6" src="https://lh5.googleusercontent.com/-vmSp-YN10lA/VcH6S35gAWI/AAAAAAABYqk/6wuA5T3ApSk/w1832-h1376-no/IMG_20150805_131745-ANIMATION.gif"
         width=466
@@ -60,10 +60,21 @@
         media="(max-width: 649px)"
         id="img7" src="https://lh4.googleusercontent.com/-okOlNNHeoOc/VbYyrlFYFII/AAAAAAABYdA/La-3j3c-QQI/w2004-h734-no/PANO_20150726_171347%257E2.jpg"
         width=527
-        height=193 layout="responsive" ></amp-img>
+        height=193 layout="responsive" ></amp-img> -->
+
+    <amp-img alt="" layout="responsive" media="(min-width: 768px)" src="trainwreck_lg.webp" width="1800" height="1014" layout="responsive">
+      <amp-img fallback media="(min-width: 768px)" src="trainwreck_lg.jpg" width="1800" height="1014" layout="responsive"></amp-img>
+      <noscript><img src="trainwreck_lg.jpg" width="1140" height="640" alt=""></noscript>
+    </amp-img>
+    <amp-img alt="" layout="responsive" media="(max-width: 767px)" src="trainwreck_sm.webp" width=768 height=432 layout="responsive">
+      <amp-img fallback media="(max-width: 768px)" src="trainwreck_sm.jpg" width=768 height=432 layout="responsive"></amp-img>
+      <noscript><img src="trainwreck_sm.jpg" width="768" height="432" alt=""></noscript>
+    </amp-img>
   </section>
 
 
+
+<!--
   <p>
     <amp-anim
         src="https://lh3.googleusercontent.com/qNn8GDz8Jfd-s9lt3Nc4lJeLjVyEaqGJTk1vuCUWazCmAeOBVjSWDD0SMTU7x0zhVe5UzOTKR0n-kN4SXx7yElvpKYvCMaRyS_g-jydhJ_cEVYmYPiZ_j1Y9de43mlKxU6s06uK1NAlpbSkL_046amEKOdgIACICkuWfOBwlw2hUDfjPOWskeyMrcTu8XOEerCLuVqXugG31QC345hz3lUyOlkdT9fMYVUynSERGNzHba7bXMOxKRe3izS5DIWUgJs3oeKYqA-V8iqgCvneD1jj0Ff68V_ajm4BDchQubBJU0ytXVkoWh27ngeEHubpnApOS6fcGsjPxeuMjnzAUtoTsiXz2FZi1mMrxrblJ-kZoAq1DJ95cnoqoa2CYq3BTgq2E8BRe2paNxLJ5GXBCTpNdXMpVJc6eD7ceijQyn-2qanilX-iK3ChbOq0uBHMvsdoC_LsFOu5KzbbNH71vM3DPkvDGmHJmF67Vj8sQ6uBrLnzpYlCyN4-Y9frR8zugDcqX5Q=w400-h225-no"
@@ -140,6 +151,6 @@
 
   <amp-image-lightbox id="lightbox1" layout="nodisplay"></amp-image-lightbox>
 
-  <amp-pixel width=1 height=1 src="https://pubads.g.doubleclick.net/activity;dc_iu=/12344/pixel;ord=$RANDOM?"></amp-pixel>
+  <amp-pixel width=1 height=1 src="https://pubads.g.doubleclick.net/activity;dc_iu=/12344/pixel;ord=$RANDOM?"></amp-pixel> -->
 </body>
 </html>
