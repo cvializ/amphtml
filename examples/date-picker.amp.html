@@ -209,6 +209,22 @@
   ></amp-date-picker>
 </amp-lightbox>
 
+<h2>Set Date from amp-state</h2>
+<button class="ampstart-btn caps" on="tap:AMP.setState({datestate: {date: '2018-05-30'}})">Today</button>
+<div [text]="datestate.date">date</div>
+<input id="state-date" [value]="datestate.date">
+<amp-date-picker
+  id="action-picker"
+  type="single"
+  mode="static"
+  layout="fixed-height"
+  input-selector="#state-date"
+  on="select:AMP.setState({datestate: {date: event.date}})"
+  height="360"
+  format="YYYY-MM-DD"
+  [date]="datestate.date">
+</amp-date-picker>
+<amp-state id="datestate" src="date-picker.json"></amp-state>
 <div class="spacer"></div>
 </body>
 </html>

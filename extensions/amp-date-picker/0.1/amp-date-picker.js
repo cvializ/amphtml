@@ -185,6 +185,9 @@ export class AmpDatePicker extends AMP.BaseElement {
     this.document_ = this.element.ownerDocument;
 
     /** @private @const */
+    this.input_ = Services.inputFor(this.win);
+
+    /** @private @const */
     this.moment_ = requireExternal('moment');
 
     /** @private @const */
@@ -383,6 +386,27 @@ export class AmpDatePicker extends AMP.BaseElement {
     this.cleanupListeners_();
     this.cleanupSrcTemplates_();
     this.clearRenderedTemplates_();
+  }
+
+  /** @override */
+  mutatedAttributesCallback(mutations) {
+    const date = mutations['date'];
+    const startDate = mutations['start-date'];
+    const endDate = mutations['end-date'];
+
+    if (date !== undefined) {
+      this.handleSetDate_(date);
+      // this.element.removeAttribute('date');
+    }
+    if (startDate !== undefined || endDate !== undefined) {
+      this.handleSetDates_(startDate, endDate);
+      if (startDate) {
+        // this.element.removeAttribute('start-date');
+      }
+      if (endDate) {
+        // this.element.removeAttribute('end-date');
+      }
+    }
   }
 
   /**
@@ -676,6 +700,7 @@ export class AmpDatePicker extends AMP.BaseElement {
     // TODO(cvializ): Add aria message to use down arrow to trigger calendar.
     this.listen_(root, 'focusin', this.handleFocus_.bind(this));
     this.listen_(root, 'keydown', this.handleKeydown_.bind(this));
+    this.listen_(root, AmpEvents.DOM_UPDATE, this.handleInput_.bind(this));
   }
 
   /**
@@ -1488,14 +1513,15 @@ export class AmpDatePicker extends AMP.BaseElement {
               onDateChange: this.onDateChange,
               onDatesChange: this.onDatesChange,
               onFocusChange: this.onFocusChange,
+              initialVisibleMonth: (props.date || props.startDate || props.endDate || this.moment_()),
               onMount: this.onMount,
-              renderDay: this.renderDay,
+              // renderDay: this.renderDay,
               blocked: this.blocked_,
               highlighted: this.highlighted_,
               firstDayOfWeek: this.firstDayOfWeek_,
               daySize: this.daySize_,
               weekDayFormat: this.weekDayFormat_,
-              isFocused: props.isFocused, // should automatically focus
+              isFocused: this.input_.isMouseDetected() && props.isFocused, // should automatically focus
               focused: props.focused,
             }, props)),
             this.container_);

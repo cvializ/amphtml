@@ -221,6 +221,9 @@ function createElementRules_() {
     'AMP-CAROUSEL': {
       'slide': null,
     },
+    'AMP-DATE-PICKER': {
+      'date': null,
+    },
     'AMP-IFRAME': {
       'src': null,
     },
