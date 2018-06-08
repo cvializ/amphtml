@@ -243,13 +243,13 @@ export class ActionService {
     this.globalMethodHandlers_ = map();
 
     // Add core events.
-    this.addEvent('tap');
-    this.addEvent('submit');
-    this.addEvent('change');
-    this.addEvent('input-debounced');
-    this.addEvent('input-throttled');
-    this.addEvent('valid');
-    this.addEvent('invalid');
+    this.addEvent_('tap');
+    this.addEvent_('submit');
+    this.addEvent_('change');
+    this.addEvent_('input-debounced');
+    this.addEvent_('input-throttled');
+    this.addEvent_('valid');
+    this.addEvent_('invalid');
   }
 
   /** @override */
@@ -262,18 +262,20 @@ export class ActionService {
    * @param {string} name
    * TODO(dvoytenko): switch to a system where the event recognizers are
    * registered with Action instead, e.g. "doubletap", "tap to zoom".
+   * @private
    */
-  addEvent(name) {
+  addEvent_(name) {
+    const addEventListener = this.root_.addEventListener.bind(this.root_);
     if (name == 'tap') {
       // TODO(dvoytenko): if needed, also configure touch-based tap, e.g. for
       // fast-click.
-      this.root_.addEventListener('click', event => {
+      addEventListener('click', event => {
         if (!event.defaultPrevented) {
           const element = dev().assertElement(event.target);
           this.trigger(element, name, event, ActionTrust.HIGH);
         }
       });
-      this.root_.addEventListener('keydown', event => {
+      addEventListener('keydown', event => {
         const element = dev().assertElement(event.target);
         const {keyCode} = event;
         if (keyCode == KeyCodes.ENTER || keyCode == KeyCodes.SPACE) {
@@ -287,12 +289,12 @@ export class ActionService {
         }
       });
     } else if (name == 'submit') {
-      this.root_.addEventListener(name, event => {
+      addEventListener(name, event => {
         const element = dev().assertElement(event.target);
         this.trigger(element, name, event, ActionTrust.HIGH);
       });
     } else if (name == 'change') {
-      this.root_.addEventListener(name, event => {
+      addEventListener(name, event => {
         const element = dev().assertElement(event.target);
         this.addTargetPropertiesAsDetail_(event);
         this.trigger(element, name, event, ActionTrust.HIGH);
@@ -304,7 +306,7 @@ export class ActionService {
             ActionTrust.HIGH);
       }, DEFAULT_DEBOUNCE_WAIT);
 
-      this.root_.addEventListener('input', event => {
+      addEventListener('input', event => {
         // Create a DeferredEvent to avoid races where the browser cleans up
         // the event object before the async debounced function is called.
         const deferredEvent = new DeferredEvent(event);
@@ -318,13 +320,13 @@ export class ActionService {
             ActionTrust.HIGH);
       }, DEFAULT_THROTTLE_INTERVAL);
 
-      this.root_.addEventListener('input', event => {
+      addEventListener('input', event => {
         const deferredEvent = new DeferredEvent(event);
         this.addTargetPropertiesAsDetail_(deferredEvent);
         throttledInput(deferredEvent);
       });
     } else if (name == 'valid' || name == 'invalid') {
-      this.root_.addEventListener(name, event => {
+      addEventListener(name, event => {
         const element = dev().assertElement(event.target);
         this.trigger(element, name, event, ActionTrust.HIGH);
       });
