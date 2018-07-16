@@ -248,7 +248,7 @@ Both success and error responses should have a `Content-Type: application/json` 
 
 Publishers can render these responses in a inlined template inside their forms as follows:
 
-*Note*: This form uses the `submitting` attribute to display a message to the user when the form is submitting. 
+*Note*: This form uses the `submitting` attribute to display a message to the user when the form is submitting.
 
 ```html
 <form ...>
@@ -325,7 +325,7 @@ Browsers that uses webkit-based engines currently (as of August 2016) do not sup
 #### :user-invalid/:user-valid
 These pseudo classes are part of the [future CSS Selectors 4 spec](https://drafts.csswg.org/selectors-4/#user-pseudos) and are introduced to allow better hooks for styling invalid/valid fields based on a few criteria.
 
-One of the main differences between `:invalid` and `:user-invalid` is when are they applied to the element. :user-invalid is applied after a significant interaction from the user with the field (e.g. user types in a field, or blur from the field).
+One of the main differences between `:invalid` and `:user-invalid` is when are they applied to the element. `:user-invalid` is applied after a significant interaction from the user with the field (e.g. user types in a field, or blur from the field).
 
 `amp-form` provides classes (see below) to polyfill these pseudo-classes. `amp-form` also propagates these to ancestors `fieldset`s and `form`.
 

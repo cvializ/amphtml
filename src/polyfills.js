@@ -20,6 +20,9 @@ import {
   install as installDOMTokenListToggle,
 } from './polyfills/domtokenlist-toggle';
 import {install as installDocContains} from './polyfills/document-contains';
+import {
+  install as installFieldsetValidity,
+} from './polyfills/fieldset-validity';
 import {install as installMathSign} from './polyfills/math-sign';
 import {install as installObjectAssign} from './polyfills/object-assign';
 import {install as installPromise} from './polyfills/promise';
@@ -44,3 +47,4 @@ installObjectAssign(self);
 installPromise(self);
 installDocContains(self);
 installArrayIncludes(self);
+installFieldsetValidity(self);
