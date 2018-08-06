@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import babelHelpers from './amp-react-dates/helpers';
 import {ActionTrust} from '../../../src/action-constants';
 import {AmpEvents} from '../../../src/amp-events';
 import {CSS} from '../../../build/amp-date-picker-0.1.css';
@@ -23,6 +24,12 @@ import {Deferred} from '../../../src/utils/promise';
 import {FiniteStateMachine} from '../../../src/finite-state-machine';
 import {KeyCodes} from '../../../src/utils/key-codes';
 import {Layout, isLayoutSizeDefined} from '../../../src/layout';
+import {
+  Moment,
+  React,
+  ReactDatesConstants,
+  ReactDom,
+} from './amp-react-dates/build';
 import {Services} from '../../../src/services';
 import {batchFetchJsonFor} from '../../../src/batched-json';
 import {computedStyle} from '../../../src/style';
@@ -40,7 +47,6 @@ import {
 } from '../../../src/dom';
 import {map} from '../../../src/utils/object';
 import {once} from '../../../src/utils/function';
-import {requireExternal} from '../../../src/module';
 
 
 /**
@@ -209,19 +215,19 @@ export class AmpDatePicker extends AMP.BaseElement {
     this.document_ = this.element.ownerDocument;
 
     /** @private @const */
-    this.moment_ = requireExternal('moment');
+    this.moment_ = Moment;
 
     /** @private @const */
-    this.react_ = requireExternal('react');
+    this.react_ = React;
     if (this.react_.options) {
       this.react_.options.syncComponentUpdates = false;
     }
 
     /** @private @const */
-    this.reactRender_ = requireExternal('react-dom').render;
+    this.reactRender_ = ReactDom.render;
 
     /** @private @const */
-    this.ReactDatesConstants_ = requireExternal('react-dates/constants');
+    this.ReactDatesConstants_ = ReactDatesConstants;
 
     /** @private {?../../../src/service/action-impl.ActionService} */
     this.action_ = null;

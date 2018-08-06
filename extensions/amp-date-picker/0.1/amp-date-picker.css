@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@import '../../../third_party/react-dates/_datepicker.css';
+@import './amp-react-dates/node_modules/react-dates/lib/css/_datepicker.css';
 
 
 amp-date-picker[mode="overlay"] .i-amphtml-date-picker-container {

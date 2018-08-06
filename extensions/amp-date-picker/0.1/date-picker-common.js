@@ -14,8 +14,13 @@
  * limitations under the License.
  */
 
+
+import {
+  Moment,
+  React,
+  ReactDates,
+} from './amp-react-dates/build';
 import {map, omit} from '../../../src/utils/object';
-import {requireExternal} from '../../../src/module';
 
 
 /**
@@ -28,9 +33,8 @@ export function withDatePickerCommon(WrappedComponent) {
   const {
     isInclusivelyAfterDay,
     isInclusivelyBeforeDay,
-  } = requireExternal('react-dates');
-  const React = requireExternal('react');
-  const moment = requireExternal('moment');
+  } = ReactDates;
+  const moment = Moment;
 
   /**
    * @param {!moment} max

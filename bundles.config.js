@@ -275,7 +275,8 @@ exports.extensionBundles = [
     options: {hasCss: true},
     type: TYPES.MISC,
     extraBundles: [
-      'third_party/react-dates/bundle.js',
+      // 'third_party/react-dates/bundle.js',
+      'extensions/amp-date-picker/0.1/amp-react-dates/helpers.js',
     ],
   },
   {

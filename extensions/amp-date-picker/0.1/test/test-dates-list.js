@@ -16,10 +16,11 @@
 
 import '../../../../third_party/react-dates/bundle';
 import {DatesList} from '../dates-list';
-import {requireExternal} from '../../../../src/module';
+import {Moment} from './amp-react-dates/build';
+
 
 describes.sandboxed('DatesList', {}, () => {
-  const moment = requireExternal('moment');
+  const moment = Moment;
 
   it('should accept date strings and RRULE strings', () => {
     const containedDate = '09/04/1998';

@@ -494,15 +494,6 @@ const RTC_ERROR_ENUM = {};
 var rtcResponseDef;
 
 /**
- * This symbol is exposed by browserify bundles transformed by
- * `scoped-require.js` to avoid polluting the global namespace with `require`.
- * It allows AMP extensions to consume code injected into their binaries that
- * cannot be run through Closure Compiler, e.g. React code with JSX.
- * @type {!function(string):?}
- */
-AMP.require;
-
-/**
  * TransitionDef function that accepts normtime, typically between 0 and 1 and
  * performs an arbitrary animation action. Notice that sometimes normtime can
  * dip above 1 or below 0. This is an acceptable case for some curves. The

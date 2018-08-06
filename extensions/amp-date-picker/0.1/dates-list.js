@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-import {requireExternal} from '../../../src/module';
+import {
+  Moment,
+  ReactDates,
+} from './amp-react-dates/build';
 import {rrulestr} from '../../../third_party/rrule/rrule';
 
 
@@ -35,10 +38,10 @@ export class DatesList {
   constructor(dates) {
 
     /** @private @const */
-    this.ReactDates_ = requireExternal('react-dates');
+    this.ReactDates_ = ReactDates;
 
     /** @private @const */
-    this.moment_ = requireExternal('moment');
+    this.moment_ = Moment;
 
     /** @private @const */
     this.rrulestrs_ = dates

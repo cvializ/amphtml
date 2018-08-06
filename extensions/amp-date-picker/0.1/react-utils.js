@@ -14,16 +14,15 @@
  * limitations under the License.
  */
 
-import {requireExternal} from '../../../src/module';
-
+import {
+  React,
+} from './amp-react-dates/build';
 
 /**
  * Create a React component that can render Promises
  * @return {function(new:React.Component, !Object)}
  */
 function createDeferred_() {
-  const React = requireExternal('react');
-
   class Deferred extends React.Component {
     /**
      * @param {!Object} props

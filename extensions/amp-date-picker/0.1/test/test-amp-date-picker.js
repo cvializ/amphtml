@@ -16,8 +16,8 @@
 import '../../../../third_party/react-dates/bundle';
 import * as lolex from 'lolex';
 import {AmpDatePicker} from '../amp-date-picker';
+import {Moment} from './amp-react-dates/build';
 import {createElementWithAttributes} from '../../../../src/dom.js';
-import {requireExternal} from '../../../../src/module';
 
 describes.realWin('amp-date-picker', {
   amp: {
@@ -25,7 +25,7 @@ describes.realWin('amp-date-picker', {
     extensions: ['amp-date-picker'],
   },
 }, env => {
-  const moment = requireExternal('moment');
+  const moment = Moment;
   let clock;
   let win;
   let document;

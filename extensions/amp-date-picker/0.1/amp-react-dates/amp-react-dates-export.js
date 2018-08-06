@@ -1,5 +1,5 @@
 /**
- * Copyright 2017 The AMP HTML Authors. All Rights Reserved.
+ * Copyright 2018 The AMP HTML Authors. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,20 @@
  * limitations under the License.
  */
 
-import {dev} from './log';
-
-const TAG = 'AMP.require';
-
 /**
- * Allows `require`ing modules exported by a browserify bundle.
- * @param {string} module
- * @return {?}
+ * @fileoverview Export of react-dates API and dependencies.
  */
-export function requireExternal(module) {
-  if (AMP.require) {
-    return AMP.require(module);
-  } else {
-    dev().error(TAG, `Could not require external module '${module}'.` +
-        ' Did you import the bundle in the extension?');
-  }
-}
+
+import './helpers'
+import 'react-dates/initialize';
+import Moment_ from 'moment';
+import ReactDatesConstants_ from 'react-dates/constants';
+import ReactDates_ from 'react-dates';
+import ReactDom_ from 'react-dom';
+import React_ from 'react';
+
+export const Moment = Moment_;
+export const ReactDatesConstants = ReactDatesConstants_;
+export const ReactDates = ReactDates_;
+export const ReactDom = ReactDom_;
+export const React = React_;

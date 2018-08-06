@@ -15,8 +15,11 @@
  */
 
 import {DayPickerPhrases} from './defaultPhrases';
+import {
+  ReactDates,
+  ReactDatesConstants,
+} from './amp-react-dates/build';
 import {map} from '../../../src/utils/object';
-import {requireExternal} from '../../../src/module';
 import {withDatePickerCommon} from './date-picker-common';
 
 
@@ -25,11 +28,10 @@ import {withDatePickerCommon} from './date-picker-common';
  * @return {function(new:React.Component, !Object)} A single date picker component class
  */
 function createSingleDatePickerBase() {
-  const {
-    DAY_SIZE,
-    HORIZONTAL_ORIENTATION,
-  } = requireExternal('react-dates/constants');
-  const {DayPickerSingleDateController} = requireExternal('react-dates');
+  // Closure with --single_pass gives a type error when destructuring here.
+  const DAY_SIZE = ReactDatesConstants.DAY_SIZE; // eslint-disable-line amphtml-internal/prefer-destructuring
+  const HORIZONTAL_ORIENTATION = ReactDatesConstants.HORIZONTAL_ORIENTATION; // eslint-disable-line amphtml-internal/prefer-destructuring
+  const {DayPickerSingleDateController} = ReactDates;
 
   const defaultProps = map({
     date: null,
