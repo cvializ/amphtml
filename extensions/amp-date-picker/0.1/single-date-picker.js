@@ -18,7 +18,7 @@ import {DayPickerPhrases} from './defaultPhrases';
 import {
   ReactDates,
   ReactDatesConstants,
-} from './amp-react-dates/build';
+} from './amp-react-dates';
 import {map} from '../../../src/utils/object';
 import {withDatePickerCommon} from './date-picker-common';
 

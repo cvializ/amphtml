@@ -16,7 +16,7 @@
 
 import '../../../../third_party/react-dates/bundle';
 import {DatesList} from '../dates-list';
-import {Moment} from './amp-react-dates/build';
+import {Moment} from './amp-react-dates';
 
 
 describes.sandboxed('DatesList', {}, () => {

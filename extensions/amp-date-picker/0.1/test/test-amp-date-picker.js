@@ -16,7 +16,7 @@
 import '../../../../third_party/react-dates/bundle';
 import * as lolex from 'lolex';
 import {AmpDatePicker} from '../amp-date-picker';
-import {Moment} from './amp-react-dates/build';
+import {Moment} from './amp-react-dates';
 import {createElementWithAttributes} from '../../../../src/dom.js';
 
 describes.realWin('amp-date-picker', {

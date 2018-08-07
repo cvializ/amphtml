@@ -30,14 +30,14 @@ export default {
   output: {
     name: 'ReactDates',
     format: 'umd',
-    file: 'build/index.js',
+    file: '../amp-react-dates.js',
     sourceMap: true,
   },
 
   plugins: [
     alias({
       'react': path.resolve(__dirname,
-          'node_modules/preact/dist/preact.js'),
+          'node_modules/preact-compat/dist/preact-compat.js'),
       'react-dom': path.resolve(__dirname,
           'node_modules/preact-compat/dist/preact-compat.js'),
       'moment': path.resolve(__dirname,

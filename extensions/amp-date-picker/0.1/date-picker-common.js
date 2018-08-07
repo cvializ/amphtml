@@ -19,7 +19,7 @@ import {
   Moment,
   React,
   ReactDates,
-} from './amp-react-dates/build';
+} from './amp-react-dates';
 import {map, omit} from '../../../src/utils/object';
 
 

@@ -16,7 +16,7 @@
 
 import {
   React,
-} from './amp-react-dates/build';
+} from './amp-react-dates';
 
 /**
  * Create a React component that can render Promises

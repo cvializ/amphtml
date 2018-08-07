@@ -113,6 +113,8 @@ function compile(entryModuleFilenames, outputDir,
     '3p/environment.js',
     // Generated code.
     'extensions/amp-access/0.1/access-expr-impl.js',
+    'extensions/amp-date-picker/0.1/amp-react-dates.js',
+    'extensions/amp-date-picker/0.1/amp-react-dates-helpers.js',
   ];
 
   const baseExterns = [
@@ -231,6 +233,10 @@ function compile(entryModuleFilenames, outputDir,
       '!third_party/babel/custom-babel-helpers.js',
       // Exclude since it's not part of the runtime/extension binaries.
       '!extensions/amp-access/0.1/amp-login-done.js',
+      '!extensions/amp-date-picker/0.1/amp-react-dates/**/*',
+      // TODO(cvializ): comment out?
+      'extensions/amp-date-picker/0.1/amp-react-dates.js',
+      'extensions/amp-date-picker/0.1/amp-react-dates-helpers.js',
       'builtins/**.js',
       'third_party/caja/html-sanitizer.js',
       'third_party/closure-library/sha384-generated.js',

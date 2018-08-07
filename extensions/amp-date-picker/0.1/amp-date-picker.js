@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import './amp-react-dates/helpers';
+import './amp-react-dates-helpers';
 import {ActionTrust} from '../../../src/action-constants';
 import {AmpEvents} from '../../../src/amp-events';
 import {CSS} from '../../../build/amp-date-picker-0.1.css';
@@ -29,7 +29,7 @@ import {
   React,
   ReactDatesConstants,
   ReactDom,
-} from './amp-react-dates/build';
+} from './amp-react-dates';
 import {Services} from '../../../src/services';
 import {batchFetchJsonFor} from '../../../src/batched-json';
 import {computedStyle} from '../../../src/style';

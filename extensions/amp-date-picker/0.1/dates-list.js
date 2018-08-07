@@ -17,7 +17,7 @@
 import {
   Moment,
   ReactDates,
-} from './amp-react-dates/build';
+} from './amp-react-dates';
 import {rrulestr} from '../../../third_party/rrule/rrule';
 
 

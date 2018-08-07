@@ -274,10 +274,6 @@ exports.extensionBundles = [
     version: '0.1',
     options: {hasCss: true},
     type: TYPES.MISC,
-    extraBundles: [
-      // 'third_party/react-dates/bundle.js',
-      'extensions/amp-date-picker/0.1/amp-react-dates/helpers.js',
-    ],
   },
   {
     name: 'amp-image-viewer',

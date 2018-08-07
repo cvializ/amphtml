@@ -205,6 +205,8 @@ window.vg;
  */
 let ReactRender = function() {};
 
+let babelHelpers = {};
+
 /**
  * @struct
  */
