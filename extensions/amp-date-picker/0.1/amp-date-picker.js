@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import babelHelpers from './amp-react-dates/helpers';
+import './amp-react-dates/helpers';
 import {ActionTrust} from '../../../src/action-constants';
 import {AmpEvents} from '../../../src/amp-events';
 import {CSS} from '../../../build/amp-date-picker-0.1.css';

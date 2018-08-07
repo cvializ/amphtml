@@ -18,7 +18,6 @@
  * @fileoverview Export of react-dates API and dependencies.
  */
 
-import './helpers'
 import 'react-dates/initialize';
 import Moment_ from 'moment';
 import ReactDatesConstants_ from 'react-dates/constants';
