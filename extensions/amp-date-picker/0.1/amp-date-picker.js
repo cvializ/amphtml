@@ -43,6 +43,7 @@ import {map} from '../../../src/utils/object';
 import {once} from '../../../src/utils/function';
 import {requireExternal} from '../../../src/module';
 
+import {AmpCalendar} from './amp-calendar';
 
 /**
  * @typedef {{
@@ -1620,4 +1621,5 @@ export class AmpDatePicker extends AMP.BaseElement {
 
 AMP.extension(TAG, '0.1', AMP => {
   AMP.registerElement(TAG, AmpDatePicker, CSS);
+  AMP.registerElement('amp-calendar', AmpCalendar);
 });
