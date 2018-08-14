@@ -8,15 +8,26 @@
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS-IS" BASIS,
+ * distributed under the License is distributed on an "AS_IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
 
 import {Layout} from '../../../src/layout';
+import {
+  getDaysInMonth,
+  getFirstDayOfMonth,
+  getFirstWeekday,
+  getNextMonth,
+  getPreviousMonth,
+  getWeekdayName,
+} from './util';
 import {htmlFor} from '../../../src/static-template';
-import {iterateCursor} from '../../../src/dom';
+import {html as litHtml, render} from 'lit-html';
+import {map} from '../../../src/utils/object';
+
+// import {Component, render} from 'preact';
 
 // TODO(cvializ): Focus areas
 // - RTL
@@ -27,6 +38,48 @@ import {iterateCursor} from '../../../src/dom';
 //
 const DAY_MILLISECONDS = 86400000;
 
+const CalendarStates = {
+  AFTER_HOVERED_START: 'after-hovered-start',
+  BLOCKED_CALENDAR: 'blocked-calendar',
+  BLOCKED_MINIMUM_NIGHTS: 'blocked-minimum-nights',
+  BLOCKED_OUT_OF_RANGE: 'blocked-out-of-range',
+  HIGHLIGHTED_CALENDAR: 'highlighted-calendar',
+  HOVERED_SPAN: 'hovered-span',
+  LAST_IN_RANGE: 'last-in-range',
+  SELECTED_END: 'selected-end',
+  SELECTED_SPAN: 'selected-span',
+  SELECTED_START: 'selected-start',
+  SELECTED: 'selected',
+  TODAY: 'today',
+};
+
+/**
+ * Represents and controls a single date.
+ */
+class CalendarDay {
+  /**
+   *
+   * @param {!Element} element
+   * @param {Date} date
+   */
+  constructor(element, date) {
+    this.element = element;
+
+    this.date = date;
+
+    this.element.dataset.iAmphtmlDate = Number(date);
+  }
+
+  /**
+   *
+   * @param {string} state
+   * @param {boolean} value
+   */
+  toggleState(state, value) {
+
+  }
+}
+
 export class AmpCalendar extends AMP.BaseElement {
   /** @param {!AmpElement} element */
   constructor(element) {
@@ -36,7 +89,9 @@ export class AmpCalendar extends AMP.BaseElement {
 
     this.displayedDate_ = new Date();
 
-    this.selectedDate_ = null;
+    this.selectedDate_ = new Date('2018-08-13');
+
+    this.datesMap = map();
 
     /** @private {?Element} */
     this.container_ = null;
@@ -48,12 +103,20 @@ export class AmpCalendar extends AMP.BaseElement {
     /** @private @const */
     this.firstDayOfWeek_ =
         Number(this.element.getAttribute('first-day-of-week')) || 0;
+
+
   }
 
   /** @override */
   buildCallback() {
     this.isRtl = this.document_.dir == 'rtl' ||
         this.element.hasAttribute('rtl');
+
+    // This is a lit-html template function. It returns a lit-html template.
+    const helloTemplate = name => litHtml`<div>Hello ${name}!</div>`;
+
+    // This renders <div>Hello Steve!</div> to the document body
+    render(helloTemplate('Steve'), this.element);
 
     const picker = htmlFor(this.document_)`
     <div class="picker">
@@ -69,16 +132,26 @@ export class AmpCalendar extends AMP.BaseElement {
     this.today_ = picker.getElementsByClassName('today')[0];
 
     this.element.addEventListener('click', e => {
-      if (e.target == this.next_) {
-        this.displayedDate_ = getNextMonth(this.displayedDate_);
-      } else if (e.target == this.prev_) {
-        this.displayedDate_ = getPreviousMonth(this.displayedDate_);
-      } else if (e.target == this.today_) {
-        this.displayedDate_ = new Date();
+      const {target} = e;
+
+      const date = Number(target.dataset.iAmphtmlDate);
+      if (date) {
+        this.selectedDate_ = new Date(date);
+        this.setSelectedDate_(this.selectedDate_);
+      } else {
+        if (e.target == this.next_) {
+          this.displayedDate_ = getNextMonth(this.displayedDate_);
+        } else if (e.target == this.prev_) {
+          this.displayedDate_ = getPreviousMonth(this.displayedDate_);
+        } else if (e.target == this.today_) {
+          this.displayedDate_ = new Date();
+        }
+        this.renderMonths_();
       }
-      this.renderMonths_();
     });
+
     this.renderMonths_();
+    this.setSelectedDate_(this.selectedDate_);
     this.element.appendChild(this.container_);
   }
 
@@ -89,7 +162,7 @@ export class AmpCalendar extends AMP.BaseElement {
       const date = Number(target.dataset.iAmphtmlDate);
       if (date) {
         this.selectedDate_ = new Date(date);
-        console.log(this.selectedDate_);
+        this.setSelectedDate_(this.selectedDate_);
       }
     });
   }
@@ -105,128 +178,112 @@ export class AmpCalendar extends AMP.BaseElement {
   renderMonths_() {
     const doc = this.document_;
     const months = this.container_.getElementsByClassName('months')[0];
-    months.innerHTML = '';
+    // months.innerHTML = '';
 
-    months.appendChild(renderMonth(doc, getPreviousMonth(
-        this.displayedDate_),this.locale_, this.firstDayOfWeek_), this.isRtl_);
-    months.appendChild(renderMonth(
-        doc, this.displayedDate_, this.locale_, this.firstDayOfWeek_, this.isRtl_));
-    months.appendChild(renderMonth(doc, getNextMonth(
-        this.displayedDate_), this.locale_, this.firstDayOfWeek_, this.isRtl_));
+    const month1 = renderMonth(doc, getPreviousMonth(
+        this.displayedDate_), this.selectedDate_, this.locale_, this.firstDayOfWeek_, this.isRtl_);
+    const month2 = renderMonth(
+        doc, this.displayedDate_, this.selectedDate_, this.locale_, this.firstDayOfWeek_, this.isRtl_);
+    const month3 = renderMonth(doc, getNextMonth(
+        this.displayedDate_), this.selectedDate_, this.locale_, this.firstDayOfWeek_, this.isRtl_);
+
+    render(litHtml`${month1}${month2}${month3}`, months);
   }
 
+  /** Update the selected date */
+  setSelectedDate_(date) {
+    this.selectedDate_ = new Date(date);
+    this.renderMonths_();
+  }
 }
 
 /**
  * Render a month
  * @param {!Document} doc
- * @param {!Date} date
+ * @param {!Date} month
+ * @param {!Date} selectedDate
  * @param {string} locale
  * @param {number} firstDayOfWeek
  * @param {boolean} isRtl
  * @return {!Element}
  */
-function renderMonth(doc, date, locale, firstDayOfWeek, isRtl) {
-  const calendarHtml = htmlFor(doc)`
-  <div class="calendar-month" style="display: inline-block">
-    <span class="month"></span>
+function renderMonth(doc, month, selectedDate, locale, firstDayOfWeek, isRtl) {
+
+  const title = month.toLocaleString(locale, {month: 'long', year: 'numeric'});
+
+  const weekdays = [];
+  for (let i = 0; i < 7; i++) {
+    weekdays.push(
+        litHtml`<th>${getWeekdayName(i, locale, firstDayOfWeek, isRtl)}</th>`);
+  }
+
+  const cells = generateCalendarCells(month, locale, firstDayOfWeek, selectedDate);
+  const c = () => {
+    const {value, label, selected} = cells();
+    return value ?
+      litHtml`<td class="${selected ? 'selected' : ''}" data-i-amphtml-date=${Number(value)}>${label}</td>` :
+      litHtml`<td></td>`;
+  };
+
+  const calendarHtml = litHtml`
+  <div class="calendar-month">
+    <span class="month">${title}</span>
     <table>
-      <tr class="weekdays">
-        <th></th><th></th><th></th><th></th><th></th><th></th><th></th>
-      </tr>
-      <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-      <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-      <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-      <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-      <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
-      <tr><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+      <tr class="weekdays">${weekdays}</tr>
+      <tr>${c()}${c()}${c()}${c()}${c()}${c()}${c()}</tr>
+      <tr>${c()}${c()}${c()}${c()}${c()}${c()}${c()}</tr>
+      <tr>${c()}${c()}${c()}${c()}${c()}${c()}${c()}</tr>
+      <tr>${c()}${c()}${c()}${c()}${c()}${c()}${c()}</tr>
+      <tr>${c()}${c()}${c()}${c()}${c()}${c()}${c()}</tr>
+      <tr>${c()}${c()}${c()}${c()}${c()}${c()}${c()}</tr>
     </table>
   </div>
   `;
-  const firstWeekday = getFirstWeekday(date, firstDayOfWeek);
-  const daysInMonth = getDaysInMonth(date);
-
-  const title = calendarHtml.getElementsByClassName('month')[0];
-  title.innerText =
-      date.toLocaleString(locale, {month: 'long', year: 'numeric'});
-
-  const weekdays = calendarHtml.getElementsByClassName('weekdays')[0].children;
-  iterateCursor(weekdays, (weekday, i) => {
-    weekday.innerText = getWeekdayName(i, locale, firstDayOfWeek, isRtl);
-  });
-
-  const dayCells = calendarHtml.getElementsByTagName('td');
-  const dateMilliseconds = Number(getFirstDayOfMonth(date));
-  let days = 0;
-  iterateCursor(dayCells, (cell, i) => {
-    if (i >= firstWeekday && days < daysInMonth) {
-      const calendarDate = new Date(dateMilliseconds + DAY_MILLISECONDS * days++);
-      cell.innerText = calendarDate.toLocaleString(locale, {day: '2-digit'});
-      cell.dataset.iAmphtmlDate = Number(calendarDate);
-    }
-  });
 
   return calendarHtml;
 }
 
 /**
- * Get the next month
+ *
  * @param {!Date} date
- * @return {!Date}
- */
-function getNextMonth(date) {
-  return new Date(date.getFullYear(), date.getMonth() + 1, date.getDate());
-}
-
-/**
- * Get the previous month
- * @param {!Date} date
- * @return {!Date}
- */
-function getPreviousMonth(date) {
-  return new Date(date.getFullYear(), date.getMonth() - 1, date.getDate());
-}
-
-/**
- * Get the weekday name of the current month
- * @param {number} index
  * @param {string} locale
  * @param {number} firstDayOfWeek
- * @param {boolean} isRtl
- * @return {string}
+ * @param {?Date} selectedDate
+ * @return {function()}
  */
-function getWeekdayName(index, locale, firstDayOfWeek, isRtl) {
-  index = isRtl ? -index : index;
-  const date = new Date(1970, 0, 4 + index + firstDayOfWeek);
-  return date.toLocaleString(locale, {weekday: 'narrow'});
+function generateCalendarCells(date, locale, firstDayOfWeek, selectedDate) {
+  const millis = Number(getFirstDayOfMonth(date));
+  const firstWeekday = getFirstWeekday(date, firstDayOfWeek);
+  const daysInMonth = getDaysInMonth(date);
+
+  const cells = [];
+  let days = 0;
+  for (let week = 0; week < 6; week++) {
+    for (let weekday = 0; weekday < 7; weekday++) {
+      const isOutsideDay = (
+        (week == 0 && weekday < firstWeekday) ||
+         days >= daysInMonth
+      );
+
+      if (!isOutsideDay) {
+        const value = new Date(millis + DAY_MILLISECONDS * days++);
+        const label = value.toLocaleString(locale, {day: '2-digit'});
+        const selected = selectedDate && Number(getDay(selectedDate)) == Number(getDay(value));
+        cells.push({value, label, selected});
+      } else {
+        cells.push({});
+      }
+    }
+  }
+
+  let cellIndex = 0;
+  return () => cells[cellIndex++];
 }
 
 /**
- * Get the number of days in the given date's month
- * @param {!Date} date
- * @return {number}
- */
-function getDaysInMonth(date) {
-  const year = date.getFullYear();
-  const month = date.getMonth() + 1;
-  return new Date(year, month, 0).getDate();
-}
-
-/**
- * Get the first weekday of the month. 0-indexed for Sunday
- * @param {!Date} date
- * @param {number} firstDayOfWeek
- * @return {number}
- */
-function getFirstWeekday(date, firstDayOfWeek) {
-  const weekdayIndex = getFirstDayOfMonth(date).getDay();
-  return (weekdayIndex - firstDayOfWeek + 7) % 7;
-}
-
-/**
- * Gets the first day of the month.
+ * Gets the day at midnight local time
  * @param {!Date} date
  */
-function getFirstDayOfMonth(date) {
-  return new Date(date.getFullYear(), date.getMonth(), 1);
+function getDay(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
