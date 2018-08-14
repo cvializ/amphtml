@@ -275,6 +275,15 @@ exports.extensionBundles = [
     options: {hasCss: true},
     type: TYPES.MISC,
   },
+  {name: 'amp-date-parser', version: '0.1', type: TYPES.MISC},
+  {
+    name: 'amp-date-calendar',
+    version: '0.1',
+    options: {
+      hasCss: true,
+    },
+    type: TYPES.MISC,
+  },
   {
     name: 'amp-image-viewer',
     version: '0.1',

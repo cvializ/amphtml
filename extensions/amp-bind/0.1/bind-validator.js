@@ -243,6 +243,9 @@ function createElementRules_() {
         'alternativeName': 'src',
       },
     },
+    'AMP-DATE-CALENDAR': {
+      'number-of-months': null,
+    },
     'AMP-LIST': {
       'src': {
         'allowedProtocols': {

@@ -1159,6 +1159,13 @@ function compileJs(srcDir, srcFilename, destDir, options) {
   const startTime = Date.now();
   let bundler = browserify(entryPoint, {debug: true})
       .transform(babelify, {
+        // Global and ignore are needed to transform packages in node_modules
+        // that don't provide Common JS modules. lit-html is an example of a
+        // module that does not provide CJS modules.
+        // https://github.com/Polymer/lit-html/issues/70#issuecomment-325201620
+        // https://github.com/babel/babelify#why-arent-files-in-node_modules-being-transformed
+        global: true,
+        ignore: /\/node_modules\/(?!lit-html\/)/,
         compact: false,
         presets: [
           ['env', {
@@ -1167,6 +1174,7 @@ function compileJs(srcDir, srcFilename, destDir, options) {
             },
           }],
         ],
+        sourceType: 'module',
       })
       .once('transform', () => {
         endBuildStep('Transformed', srcFilename, startTime);
