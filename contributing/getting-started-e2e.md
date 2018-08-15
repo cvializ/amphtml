@@ -159,6 +159,8 @@ git branch -u upstream/master master
 
 Now that you have all of the files copied locally you can actually build the code and run a local server to try things out. We use Node.js, the Yarn package manager, and the Gulp build system to build amphtml and start up a local server that lets you try out your changes.
 
+* Install Java 8. This is needed to run Closure Compiler for `gulp dist`.
+
 * Install the latest LTS version of [Node.js](https://nodejs.org/) (which includes npm). An easy way to do so is with `nvm` (Mac and Linux: [here](https://github.com/creationix/nvm), Windows: [here](https://github.com/coreybutler/nvm-windows))
 
    ```

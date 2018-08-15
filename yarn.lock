@@ -11633,6 +11633,10 @@ rocambole@0.7.0:
   dependencies:
     esprima "^2.1"
 
+rrule@^2.3.6:
+  version "2.3.6"
+  resolved "https://registry.yarnpkg.com/rrule/-/rrule-2.3.6.tgz#a2419f2e0017b061c31a2b38b7d2307a0b6780c6"
+
 rsvp@^3.3.3:
   version "3.6.2"
   resolved "https://registry.yarnpkg.com/rsvp/-/rsvp-3.6.2.tgz#2e96491599a96cde1b515d5674a8f7a91452926a"

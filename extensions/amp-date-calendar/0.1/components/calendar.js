@@ -18,7 +18,7 @@
 import {
   getMonth,
   getNextMonth,
-} from '../util';
+} from '../date-utils';
 import {html as litHtml} from 'lit-html/lit-html';
 import {render as renderCalendarMonth} from './calendar-month';
 
@@ -31,6 +31,7 @@ import {render as renderCalendarMonth} from './calendar-month';
  *  formats: !../calendar-label-format.CalendarLabelFormat,
  *  firstDayOfWeek: number,
  *  isRtl: boolean
+ *  isDayBlocked: function(!Date):boolean
  * }}
  */
 let CalendarPropsDef;
@@ -49,13 +50,21 @@ export function render(props) {
     formats,
     firstDayOfWeek,
     isRtl,
+    isDayBlocked,
   } = props;
 
   const months = [];
   let month = getMonth(displayedDate);
   for (let i = 0; i < numberOfMonths; i++) {
-    months.push(renderCalendarMonth(
-        {daySize, month, selectedDate, formats, firstDayOfWeek, isRtl}));
+    months.push(renderCalendarMonth({
+      daySize,
+      month,
+      selectedDate,
+      formats,
+      firstDayOfWeek,
+      isRtl,
+      isDayBlocked,
+    }));
     month = getNextMonth(month);
   }
 

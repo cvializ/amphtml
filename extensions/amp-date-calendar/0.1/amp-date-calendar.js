@@ -15,17 +15,18 @@
  */
 
 import {CSS} from '../../../build/amp-date-calendar-0.1.css';
+import {CalendarDayStates} from './calendar-day-states';
 import {CalendarLabelFormats} from './calendar-label-formats';
 import {Layout} from '../../../src/layout';
 import {Services} from '../../../src/services';
 import {
   getNextMonth,
   getPreviousMonth,
-} from './util';
+  isSameDay,
+} from './date-utils';
 import {map} from '../../../src/utils/object';
 import {render} from 'lit-html/lit-html';
 import {render as renderCalendar} from './components/calendar';
-
 const TAG = 'amp-date-calendar';
 
 // TODO(cvializ): Focus areas
@@ -63,10 +64,26 @@ export class AmpDateCalendar extends AMP.BaseElement {
     this.firstDayOfWeek_ =
         Number(this.element.getAttribute('first-day-of-week')) || 0;
 
-    this.ampDateParser_ = null;
-
     this.numberOfMonths_ =
         Number(this.element.getAttribute('number-of-months')) || 2;
+
+    /** @private */
+    this.ampDateParser_ = null;
+
+    this.calendarStateRanges = {
+      [CalendarDayStates.AFTER_HOVERED_START]: [],
+      [CalendarDayStates.BLOCKED_CALENDAR]: [],
+      [CalendarDayStates.BLOCKED_MINIMUM_NIGHTS]: [],
+      [CalendarDayStates.BLOCKED_OUT_OF_RANGE]: [],
+      [CalendarDayStates.HIGHLIGHTED_CALENDAR]: [],
+      [CalendarDayStates.HOVERED_SPAN]: [],
+      [CalendarDayStates.LAST_IN_RANGE]: [],
+      [CalendarDayStates.SELECTED_END]: [],
+      [CalendarDayStates.SELECTED_SPAN]: [],
+      [CalendarDayStates.SELECTED_START]: [],
+      [CalendarDayStates.SELECTED]: [],
+      [CalendarDayStates.TODAY]: [],
+    };
 
     Services.ampDateParserForDocOrNull(this.element).then(adp => {
       this.ampDateParser = adp;
@@ -89,6 +106,14 @@ export class AmpDateCalendar extends AMP.BaseElement {
 
     this.container_ = this.document_.createElement('div');
 
+    this.render_();
+
+    this.setSelectedDate_(this.selectedDate_);
+    this.element.appendChild(this.container_);
+  }
+
+  /** @override */
+  layoutCallback() {
     this.element.addEventListener('click', e => {
       const {target} = e;
 
@@ -105,24 +130,6 @@ export class AmpDateCalendar extends AMP.BaseElement {
           this.displayedDate_ = new Date();
         }
         this.render_();
-      }
-    });
-
-    this.render_();
-
-
-    this.setSelectedDate_(this.selectedDate_);
-    this.element.appendChild(this.container_);
-  }
-
-  /** @override */
-  layoutCallback() {
-    this.element.addEventListener('click', e => {
-      const {target} = e;
-      const date = Number(target.dataset.iAmphtmlDate);
-      if (date) {
-        this.selectedDate_ = new Date(date);
-        this.setSelectedDate_(this.selectedDate_);
       }
     });
   }
@@ -154,27 +161,18 @@ export class AmpDateCalendar extends AMP.BaseElement {
    * Render the months
    */
   render_() {
-    const {
-      container_,
-      numberOfMonths_,
-      displayedDate_,
-      selectedDate_,
-      formats_,
-      firstDayOfWeek_,
-      isRtl_,
-    } = this;
-
     const calendar = renderCalendar({
       daySize: 39,
-      numberOfMonths: numberOfMonths_,
-      displayedDate: displayedDate_,
-      selectedDate: selectedDate_,
-      formats: formats_,
-      firstDayOfWeek: firstDayOfWeek_,
-      isRtl: isRtl_,
+      numberOfMonths: this.numberOfMonths_,
+      displayedDate: this.displayedDate_,
+      selectedDate: this.selectedDate_,
+      formats: this.formats_,
+      firstDayOfWeek: this.firstDayOfWeek_,
+      isRtl: this.isRtl_,
+      isDayBlocked: date => isSameDay(date, new Date()),
     });
 
-    render(calendar, container_);
+    render(calendar, this.container_);
   }
 
   /**

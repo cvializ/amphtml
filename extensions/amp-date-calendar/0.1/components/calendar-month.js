@@ -19,8 +19,7 @@ import {
   getFirstDayOfMonth,
   getFirstWeekday,
   getWeekdayName,
-  isSameDay,
-} from '../util';
+} from '../date-utils';
 
 import {html as litHtml} from 'lit-html/lit-html';
 import {render as renderCalendarDay} from './calendar-day';
@@ -36,7 +35,8 @@ const DEFAULT_BORDER_SPACING = 2;
  *  selectedDate: !Date,
  *  formats: ../calendar-label-formats.CalendarLabelFormats
  *  firstDayOfWeek: number,
- *  isRtl: boolean
+ *  isRtl: boolean,
+ *  isDayBlocked: function(!Date):boolean
  * }}
  */
 let CalendarMonthPropsDef;
@@ -54,6 +54,7 @@ export function render(props) {
     selectedDate,
     formats,
     firstDayOfWeek,
+    isDayBlocked,
     // isRtl,
   } = props;
 
@@ -69,13 +70,19 @@ export function render(props) {
   const cells =
       generateCalendarCells(month, formats, firstDayOfWeek, selectedDate);
   const c = () => {
-    const {value, label, selected} = cells();
-    return renderCalendarDay({daySize, value, label, selected});
+    const {value, label, isOutsideDay} = cells();
+    return renderCalendarDay({
+      daySize,
+      value,
+      label,
+      isDayBlocked,
+      isOutsideDay,
+    });
   };
   const calendarWidth = getCalendarWidth(daySize, DEFAULT_BORDER_SPACING);
 
   const calendarHtml = litHtml`
-  <div class="calendar-month" style="width: ${calendarWidth}px">
+  <div class="x-calendar-month" style="width: ${calendarWidth}px">
     <div class="x-calendar-month-title">${title}</div>
     <table>
       <tr class="weekdays">${weekdays}</tr>
@@ -97,10 +104,9 @@ export function render(props) {
  * @param {!Date} date
  * @param {CalendarLabelFormats} formats
  * @param {number} firstDayOfWeek
- * @param {?Date} selectedDate
  * @return {function()}
  */
-function generateCalendarCells(date, formats, firstDayOfWeek, selectedDate) {
+function generateCalendarCells(date, formats, firstDayOfWeek) {
   const millis = Number(getFirstDayOfMonth(date));
   const firstWeekday = getFirstWeekday(date, firstDayOfWeek);
   const daysInMonth = getDaysInMonth(date);
@@ -114,14 +120,11 @@ function generateCalendarCells(date, formats, firstDayOfWeek, selectedDate) {
          days >= daysInMonth
       );
 
-      if (!isOutsideDay) {
-        const value = new Date(millis + DAY_MILLISECONDS * days++);
-        const label = formats.day(value);
-        const selected = selectedDate && isSameDay(selectedDate, value);
-        cells.push({value, label, selected});
-      } else {
-        cells.push({});
-      }
+      const value = isOutsideDay ?
+        new Date(millis + DAY_MILLISECONDS * weekday) :
+        new Date(millis + DAY_MILLISECONDS * days++);
+      const label = isOutsideDay ? '' : formats.day(value);
+      cells.push({value, label, isOutsideDay});
     }
   }
 

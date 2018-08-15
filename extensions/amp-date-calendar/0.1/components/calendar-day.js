@@ -20,7 +20,8 @@ import {html as litHtml} from 'lit-html/lit-html';
  * @typedef {{
  *   selected: boolean,
  *   value: !Date,
- *   label: string
+ *   label: string,
+ *   isDayBlocked: function(!Date):boolean
  * }}
  */
 let CalendarDayPropsDef;
@@ -33,26 +34,34 @@ let CalendarDayPropsDef;
 export function render(props) {
   const {
     daySize,
-    selected,
     value,
     label,
+    // modifiers,
+    isDayBlocked,
+    isOutsideDay,
   } = props;
 
-  const selectedAttr = selected ? ' selected' : '';
+  const modifiers = [];
+  if (isDayBlocked(value)) {
+    modifiers.push('blocked');
+  }
   const valueAttr = Number(value);
 
   if (value) {
     return litHtml`
       <td
         style="width: ${daySize}px; height: ${daySize}px"
-        class="x-day${selectedAttr}"
+        class="x-day${modifiers.length ? ' ' + modifiers.join(' ') : ''}"
       >
         <button
           class="x-day-button"
           data-i-amphtml-date="${valueAttr}"
-        >${label}</button>
+        >${isOutsideDay ? '' : label}</button>
       </td>`;
   } else {
-    return litHtml`<td></td>`;
+    return litHtml`
+    <td style="width: ${daySize}px; height: ${daySize}px">
+      <button class="x-day-button"></button>
+    </td>`;
   }
 }

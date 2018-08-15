@@ -14,17 +14,10 @@
  * limitations under the License.
  */
 
-export const CalendarDayStates = {
-  AFTER_HOVERED_START: 'after-hovered-start',
-  BLOCKED_CALENDAR: 'blocked-calendar',
-  BLOCKED_MINIMUM_NIGHTS: 'blocked-minimum-nights',
-  BLOCKED_OUT_OF_RANGE: 'blocked-out-of-range',
-  HIGHLIGHTED_CALENDAR: 'highlighted-calendar',
-  HOVERED_SPAN: 'hovered-span',
-  LAST_IN_RANGE: 'last-in-range',
-  SELECTED_END: 'selected-end',
-  SELECTED_SPAN: 'selected-span',
-  SELECTED_START: 'selected-start',
-  SELECTED: 'selected',
-  TODAY: 'today',
-};
+class DateRange {
+  constructor() {
+    /*
+      contains
+    */
+  }
+}
