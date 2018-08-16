@@ -44,9 +44,9 @@ export function getPreviousMonth(date) {
 /**
  * Get the weekday name of the current month.
  * @param {number} index
- * @param {function(string):string} format
+ * @param {function(!Date):string} format
  * @param {number} firstDayOfWeek
- * @param {boolean} opt_isRtl Only needed if rendering outside of a table
+ * @param {boolean=} opt_isRtl Only needed if rendering outside of a table
  * @return {string}
  */
 export function getWeekdayName(index, format, firstDayOfWeek, opt_isRtl) {
@@ -86,15 +86,25 @@ export function getFirstDayOfMonth(date) {
 }
 
 /**
- * Check if a date is between two dates
+ * Check if a date is between two dates, exclusive
  * @param {!Date} a
  * @param {!Date} b
  * @param {!Date} test
  * @return {boolean}
  */
 export function isBetween(a, b, test) {
-  const testMilliseconds = Number(test);
-  return testMilliseconds >= Number(a) && testMilliseconds <= Number(b);
+  return test > a && test < b;
+}
+
+/**
+ * Check if a date is between two dates, inclusive
+ * @param {!Date} a
+ * @param {!Date} b
+ * @param {!Date} test
+ * @return {boolean}
+ */
+export function isBetweenInclusive(a, b, test) {
+  return test >= a && test <= b;
 }
 
 /**
@@ -112,4 +122,48 @@ export function isSameDay(a, b) {
  */
 export function getDay(date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+/**
+ *
+ * @param {string} input
+ */
+export function parseIsoDateToLocal(input) {
+  const date = new Date(input);
+  const offset = date.getTimezoneOffset();
+  return new Date(
+      date.getFullYear(), date.getMonth(), date.getDate(),
+      date.getHours(), date.getMinutes() + offset);
+}
+
+/**
+ * True if a is inclusively after b
+ * @param {!Date} a
+ * @param {!Date} b
+ */
+export function isInclusivelyAfter(a, b) {
+  return getDay(a) >= getDay(b);
+}
+
+/**
+ * Adds the following calendar indices to the given date.
+ * NOTE: This does not account for varying lengths of months, years etc, e.g.
+ * @param {!Date} date
+ * @param {number} opt_years
+ * @param {number} opt_months
+ * @param {number} opt_days
+ * @param {number} opt_hours
+ * @param {number} opt_minutes
+ * @param {number} opt_seconds
+ */
+export function addToDate(date,
+  opt_years = 0, opt_months = 0, opt_days = 0,
+  opt_hours = 0, opt_minutes = 0, opt_seconds = 0) {
+  return new Date(
+      date.getFullYear() + opt_years,
+      date.getMonth() + opt_months,
+      date.getDate() + opt_days,
+      date.getHours() + opt_hours,
+      date.getMinutes() + opt_minutes,
+      date.getSeconds() + opt_seconds);
 }

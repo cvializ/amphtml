@@ -14,14 +14,22 @@
  * limitations under the License.
  */
 
+import {CalendarDayStates} from '../calendar-day-states';
+import {
+  chooseAvailableStartDate,
+  getPhrase,
+  dateIsUnavailable
+} from '../phrases';
 import {html as litHtml} from 'lit-html/lit-html';
 
 /**
  * @typedef {{
- *   selected: boolean,
- *   value: !Date,
- *   label: string,
- *   isDayBlocked: function(!Date):boolean
+ *  daySize: number,
+ *  enableOutsideDays: boolean,
+ *  isOutsideDay: function(!Date):boolean,
+ *  formats: !../calendar-label-formats.CalendarLabelFormats,
+ *  modifiers: !Object<string,function(!Date):boolean>,
+ *  value: !Date
  * }}
  */
 let CalendarDayPropsDef;
@@ -29,39 +37,74 @@ let CalendarDayPropsDef;
 /**
  *
  * @param {CalendarDayPropsDef} props
- * @return {!lit-html/lit-html/TemplateResult}
+ * @return {!lit-html/lit-html.TemplateResult}
  */
 export function render(props) {
   const {
     daySize,
-    value,
-    label,
-    // modifiers,
-    isDayBlocked,
+    enableOutsideDays,
+    formats,
     isOutsideDay,
+    modifiers,
+    value,
   } = props;
 
-  const modifiers = [];
-  if (isDayBlocked(value)) {
-    modifiers.push('blocked');
+  const outside = isOutsideDay(value) && !enableOutsideDays;
+  const labels =
+      outside ? [] : getModifiers(modifiers, value);
+  if (isOutsideDay(value)) {
+    labels.push('outside');
+    if (!enableOutsideDays) {
+      labels.push('outside-disabled');
+    }
   }
-  const valueAttr = Number(value);
 
-  if (value) {
-    return litHtml`
-      <td
-        style="width: ${daySize}px; height: ${daySize}px"
-        class="x-day${modifiers.length ? ' ' + modifiers.join(' ') : ''}"
-      >
-        <button
-          class="x-day-button"
-          data-i-amphtml-date="${valueAttr}"
-        >${isOutsideDay ? '' : label}</button>
-      </td>`;
-  } else {
-    return litHtml`
-    <td style="width: ${daySize}px; height: ${daySize}px">
-      <button class="x-day-button"></button>
-    </td>`;
-  }
+  const blocked = modifiers[CalendarDayStates.BLOCKED_CALENDAR](value);
+  const formattedDay = formats.day(value);
+  const formattedDate = formats.date(value);
+
+  const ariaLabel = blocked ?
+    getPhrase(dateIsUnavailable, {date: formattedDate}) :
+    getPhrase(chooseAvailableStartDate, {date: formattedDate});
+
+  const valueAttr = outside ? 0 : Number(value);
+  const tabindex = getTabindex(blocked, outside);
+  return litHtml`
+  <td
+    style="width: ${daySize}px; height: ${daySize}px"
+    class="x-day${labels.length ? ' ' + labels.join(' ') : ''}"
+  >
+    <button
+      aria-label="${ariaLabel}"
+      tabindex="${tabindex}"
+      class="x-day-button"
+      data-i-amphtml-date="${valueAttr}"
+    >${outside ? '' : formattedDay}</button>
+  </td>`;
+}
+
+/**
+ * @param {boolean} blocked
+ * @param {boolean} outside
+ * @return {string}
+ */
+function getTabindex(blocked, outside) {
+  return blocked || outside ? '-1' : '0';
+}
+
+/**
+ * @param {!Object<string,function(!Date):boolean>} modifiers
+ * @param {!Date} value
+ * @return {!Array<string>}
+ */
+function getModifiers(modifiers, value) {
+  const labels = [];
+
+  Object.keys(modifiers).forEach(key => {
+    if (modifiers[key](value)) {
+      labels.push(key);
+    }
+  });
+
+  return labels;
 }

@@ -26,17 +26,17 @@ import {render as renderCalendarDay} from './calendar-day';
 
 const DAY_MILLISECONDS = 86400000;
 
-const DEFAULT_BORDER_SPACING = 2;
+const DEFAULT_BORDER_SPACING = 0;
 
 /**
  * @typedef {{
  *  daySize: number,
- *  month: !Date,
- *  selectedDate: !Date,
- *  formats: ../calendar-label-formats.CalendarLabelFormats
+ *  enableOutsideDays: boolean,
  *  firstDayOfWeek: number,
+ *  formats: !../calendar-label-formats.CalendarLabelFormats,
  *  isRtl: boolean,
- *  isDayBlocked: function(!Date):boolean
+ *  modifiers: !Object<string,function(!Date):boolean>,
+ *  month: !Date
  * }}
  */
 let CalendarMonthPropsDef;
@@ -44,18 +44,17 @@ let CalendarMonthPropsDef;
 /**
  * Render a month
  * @param {!CalendarMonthPropsDef} props
- * @return {!lit-html/lit-html/TemplateResult}
+ * @return {!lit-html/lit-html.TemplateResult}
  */
 export function render(props) {
 
   const {
     daySize,
-    month,
-    selectedDate,
-    formats,
+    enableOutsideDays,
     firstDayOfWeek,
-    isDayBlocked,
-    // isRtl,
+    formats,
+    modifiers,
+    month,
   } = props;
 
   const title = formats.month(month);
@@ -63,20 +62,23 @@ export function render(props) {
   const weekdays = [];
   for (let i = 0; i < 7; i++) {
     // TODO(cvializ): Remove isRtl if I render the weekdays inside the table
-    const name = getWeekdayName(i, formats.weekday, firstDayOfWeek/*, isRtl*/);
+    const formatWeekday = formats.weekday.bind(formats);
+    const name = getWeekdayName(i, formatWeekday, firstDayOfWeek/*, isRtl*/);
     weekdays.push(litHtml`<th>${name}</th>`);
   }
 
   const cells =
-      generateCalendarCells(month, formats, firstDayOfWeek, selectedDate);
+      generateCalendarCells(month, firstDayOfWeek);
   const c = () => {
-    const {value, label, isOutsideDay} = cells();
+    const {value, outsideDay} = cells();
+    const isOutsideDay = unusedDate => outsideDay;
     return renderCalendarDay({
       daySize,
-      value,
-      label,
-      isDayBlocked,
+      enableOutsideDays,
+      formats,
       isOutsideDay,
+      modifiers,
+      value,
     });
   };
   const calendarWidth = getCalendarWidth(daySize, DEFAULT_BORDER_SPACING);
@@ -85,7 +87,7 @@ export function render(props) {
   <div class="x-calendar-month" style="width: ${calendarWidth}px">
     <div class="x-calendar-month-title">${title}</div>
     <table>
-      <tr class="weekdays">${weekdays}</tr>
+      <tr class="x-weekdays">${weekdays}</tr>
       <tr>${c()}${c()}${c()}${c()}${c()}${c()}${c()}</tr>
       <tr>${c()}${c()}${c()}${c()}${c()}${c()}${c()}</tr>
       <tr>${c()}${c()}${c()}${c()}${c()}${c()}${c()}</tr>
@@ -99,32 +101,37 @@ export function render(props) {
   return calendarHtml;
 }
 
+
+/**
+ * @typedef {{
+ *  value: !Date,
+ *  outsideDay: boolean
+ * }}
+ */
+let CalendarCellDef;
+
 /**
  *
  * @param {!Date} date
- * @param {CalendarLabelFormats} formats
  * @param {number} firstDayOfWeek
- * @return {function()}
+ * @return {function():!CalendarCellDef}
  */
-function generateCalendarCells(date, formats, firstDayOfWeek) {
+function generateCalendarCells(date, firstDayOfWeek) {
   const millis = Number(getFirstDayOfMonth(date));
   const firstWeekday = getFirstWeekday(date, firstDayOfWeek);
   const daysInMonth = getDaysInMonth(date);
 
   const cells = [];
-  let days = 0;
+  let days = -firstWeekday;
   for (let week = 0; week < 6; week++) {
     for (let weekday = 0; weekday < 7; weekday++) {
-      const isOutsideDay = (
+      const outsideDay = (
         (week == 0 && weekday < firstWeekday) ||
          days >= daysInMonth
       );
 
-      const value = isOutsideDay ?
-        new Date(millis + DAY_MILLISECONDS * weekday) :
-        new Date(millis + DAY_MILLISECONDS * days++);
-      const label = isOutsideDay ? '' : formats.day(value);
-      cells.push({value, label, isOutsideDay});
+      const value = new Date(millis + DAY_MILLISECONDS * days++);
+      cells.push({value, outsideDay});
     }
   }
 

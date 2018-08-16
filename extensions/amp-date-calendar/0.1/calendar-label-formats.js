@@ -20,20 +20,61 @@
 export class CalendarLabelFormats {
   /**
    * Construct the Intl formatters
-   * @param {string} locale
+   * @param {Array<string>} locales
    */
-  constructor(locale) {
+  constructor(locales) {
     /** @const */
-    const month = new Intl.DateTimeFormat(
-        locale, {month: 'long', year: 'numeric'});
-    this.month = month.format.bind(month);
+    this.month_ = new Intl.DateTimeFormat(locales,
+        {month: 'long', year: 'numeric'});
 
     /** @const */
-    const day = new Intl.DateTimeFormat(locale, {day: 'numeric'});
-    this.day = day.format.bind(day);
+    this.day_ = new Intl.DateTimeFormat(locales, {day: 'numeric'});
 
     /** @const */
-    const weekday = new Intl.DateTimeFormat(locale, {weekday: 'narrow'});
-    this.weekday = weekday.format.bind(weekday);
+    this.weekday_ = new Intl.DateTimeFormat(locales, {weekday: 'narrow'});
+
+    /** @const */
+    this.date_ = new Intl.DateTimeFormat(locales,
+        {weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'});
+  }
+
+  /**
+   * Convert a Date to a string representing its month in the format's locale.
+   * Example: new Date(2018-01-01) -> "January"
+   * @param {!Date} date
+   * @return {string}
+   */
+  month(date) {
+    return this.month_.format(date);
+  }
+
+  /**
+   * Convert a Date to a string representing its day in the format's locale.
+   * Example: new Date(2018-01-01) -> "1"
+   * @param {!Date} date
+   * @return {string}
+   */
+  day(date) {
+    return this.day_.format(date);
+  }
+
+  /**
+   * Convert a Date to a string representing its weekday in the given locale.
+   * Example: new Date(2018-01-01) -> "T"
+   * @param {!Date} date
+   * @return {string}
+   */
+  weekday(date) {
+    return this.weekday_.format(date);
+  }
+
+  /**
+   * Convert a Date to a string representing its date in the given locale.
+   * Example: new Date(2018-01-01) -> "Tuesday, January 1, 2018"
+   * @param {!Date} date
+   * @return {string}
+   */
+  date(date) {
+    return this.date_.format(date);
   }
 }

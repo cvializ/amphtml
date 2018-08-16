@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+/** @enum {string} */
 export const CalendarDayStates = {
   AFTER_HOVERED_START: 'after-hovered-start',
   BLOCKED_CALENDAR: 'blocked-calendar',

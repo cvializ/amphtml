@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-
+import {calendarLabel} from '../phrases';
 import {
   getMonth,
   getNextMonth,
@@ -25,13 +25,13 @@ import {render as renderCalendarMonth} from './calendar-month';
 /**
  * @typedef {{
  *  daySize: number,
- *  numberOfMonths: number,
  *  displayedDate: !Date,
- *  selectedDate: !Date,
- *  formats: !../calendar-label-format.CalendarLabelFormat,
+ *  enableOutsideDays: boolean,
  *  firstDayOfWeek: number,
- *  isRtl: boolean
- *  isDayBlocked: function(!Date):boolean
+ *  formats: !../calendar-label-formats.CalendarLabelFormats,
+ *  isRtl: boolean,
+ *  modifiers: !Object<string,function(!Date):boolean>,
+ *  numberOfMonths: number,
  * }}
  */
 let CalendarPropsDef;
@@ -44,13 +44,13 @@ let CalendarPropsDef;
 export function render(props) {
   const {
     daySize,
-    numberOfMonths,
     displayedDate,
-    selectedDate,
-    formats,
+    enableOutsideDays,
     firstDayOfWeek,
+    formats,
     isRtl,
-    isDayBlocked,
+    modifiers,
+    numberOfMonths,
   } = props;
 
   const months = [];
@@ -58,18 +58,18 @@ export function render(props) {
   for (let i = 0; i < numberOfMonths; i++) {
     months.push(renderCalendarMonth({
       daySize,
-      month,
-      selectedDate,
-      formats,
+      enableOutsideDays,
       firstDayOfWeek,
+      formats,
       isRtl,
-      isDayBlocked,
+      modifiers,
+      month,
     }));
     month = getNextMonth(month);
   }
 
   return litHtml`
-  <div class="x-container">
+  <div class="x-container" aria-label=${calendarLabel} role="application">
     <div class="stationary">
       <div class="navigation">
         <button class="next">Next</button>

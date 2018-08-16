@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-
 amp-date-calendar .x-day-button {
   position: relative;
   height: 100%;
   width: 100%;
   text-align: center;
   background: 0 0;
-  border: 0;
+  border: 1px solid transparent;
   margin: 0;
   padding: 0;
   color: inherit;
@@ -44,14 +43,106 @@ amp-date-calendar .x-calendar-month-title {
   color: #fff;
 }
 
+amp-date-calendar table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+amp-date-calendar .x-weekdays {
+  color: #565a5c;
+}
+
 amp-date-calendar .x-container {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+  background-color: #fdfdfd;
+  border: 1px solid rgba(0,0,0,0.07);
+}
+
+amp-date-calendar .x-container * {
+  box-sizing: border-box;
 }
 
 amp-date-calendar .x-calendar-month {
   display: inline-block;
+  user-select: none;
 }
 
-amp-date-calendar .x-day.blocked {
-  background-color: lightgray;
+amp-date-calendar .x-day {
+  padding: 0;
+  background-color: transparent;
+  border: 1px solid transparent;
+  color: #565a5c;
+}
+
+amp-date-calendar .x-day:hover,
+.CalendarDay_container:hover, /* remove after update to react-dates v16 */
+.CalendarDay__default:hover {
+  background-color: #e4e7e7;
+  border: 1px solid #e4e7e7;
+}
+
+
+.x-day.selected-span,
+.CalendarDay__selected_span,
+.CalendarDay__selected_span:active,
+.CalendarDay__selected_span:hover {
+  background-color: #9bbbdd;
+  border: 1px solid #9bbbdd;
+  color: #000;
+}
+
+amp-date-calendar .x-day.blocked-calendar:hover,
+amp-date-calendar .x-day.blocked-calendar,
+.CalendarDay__blocked_calendar {
+  border: 1px solid #cacccd;
+  background-color: #cacccd;
+}
+
+amp-date-calendar .x-day.selected,
+amp-date-calendar .x-day.selected-start,
+amp-date-calendar .x-day.selected-end,
+.CalendarDay__selected,
+.CalendarDay__selected_start,
+.CalendarDay__selected:active,
+.CalendarDay__selected:hover {
+  background-color: #0654ab;
+  border: 1px solid #0654ab;
+  color: #fff;
+}
+
+
+amp-date-calendar .x-day.blocked-out-of-range,
+.CalendarDay__blocked_out_of_range,
+.CalendarDay__blocked_out_of_range:active,
+.CalendarDay__blocked_out_of_range:hover {
+  color: rgb(0, 0, 0, .1);
+  border: 1px solid transparent;
+  background: transparent;
+}
+
+/* Show a blue dot on highlighted days */
+amp-date-calendar .x-day.highlighted-calendar,
+amp-date-calendar .x-day.highlighted-calendar:hover,
+.CalendarDay__highlighted_calendar,
+.CalendarDay__highlighted_calendar:hover {
+  background-image: radial-gradient(circle at 50% 82%, #0654ab 0px, #0654ab 2px, transparent 3px, transparent 100%);
+}
+
+
+amp-date-calendar .x-day.selected.highlighted-calendar,
+.CalendarDay__selected.CalendarDay__highlighted_calendar {
+  background-image: radial-gradient(circle at 50% 82%, #fff 0px, #fff 2px, transparent 3px, transparent 100%);
+}
+
+
+amp-date-calendar .x-day.blocked-out-of-range.highlighted-calendar,
+amp-date-calendar .x-day.blocked-out-of-range.highlighted-calendar::after,
+.CalendarDay__blocked_out_of_range.CalendarDay__highlighted_calendar::after {
+  background-image: radial-gradient(circle at 50% 82%, rgba(0, 0, 0, 0.1) 0px, rgba(0, 0, 0, 0.1) 2px, transparent 3px, transparent 100%);
+}
+
+amp-date-calendar .x-day.outside-disabled {
+  background: transparent;
+  border: 1px solid transparent;
+  color: transparent;
 }
