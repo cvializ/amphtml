@@ -17,26 +17,31 @@
 import {CSS} from '../../../build/amp-date-calendar-0.1.css';
 import {CalendarDayStates} from './calendar-day-states';
 import {CalendarLabelFormats} from './calendar-label-formats';
-import {KeyCodes} from '../../../src/utils/key-codes';
 import {Layout} from '../../../src/layout';
+import {LitCalendar} from './lit-calendar';
 // import {Services} from '../../../src/services';
 import {
   addToDate,
   getDay,
+  getFirstDayOfMonth,
   getNextMonth,
   getPreviousMonth,
+  isAfter,
+  isAfterInclusive,
   isBetween,
   isBetweenInclusive,
-  isInclusivelyAfter,
   isSameDay,
   parseIsoDateToLocal,
 } from './date-utils';
+import {defaultPhrases} from './phrases';
+import {dev} from '../../../src/log';
 import {
   escapeCssSelectorIdent,
+  scopedQuerySelector,
 } from '../../../src/dom';
 import {listen} from '../../../src/event-helper';
-import {render} from 'lit-html/lit-html';
-import {render as renderCalendar} from './components/calendar';
+import {map} from '../../../src/utils/object';
+
 const TAG = 'amp-date-calendar';
 
 // TODO(cvializ): Focus areas
@@ -51,7 +56,15 @@ const TAG = 'amp-date-calendar';
 const AmpCalendarType = {
   SINGLE: 'single',
   RANGE: 'range',
-}
+};
+
+/** @enum {string} */
+const ActiveDateState = {
+  DATE: 'date',
+  START_DATE: 'start-date',
+  END_DATE: 'end-date',
+  NONE: 'none',
+};
 
 /* TODO(cvializ): This is a temporary name. It will be amp-date-picker 0.2? */
 export class AmpDateCalendar extends AMP.BaseElement {
@@ -72,7 +85,7 @@ export class AmpDateCalendar extends AMP.BaseElement {
     this.type_ = AmpCalendarType.SINGLE;
 
     /** @private {!Date} */
-    this.displayedDate_ = new Date();
+    this.displayedDate_ = getFirstDayOfMonth(this.today_);
 
     /** @private {?Date} */
     this.selectedDate_ = null;
@@ -86,8 +99,8 @@ export class AmpDateCalendar extends AMP.BaseElement {
     /** @private {?Date} */
     this.hoveredDate_ = null;
 
-    /** @private {?Date} */
-    this.focusedDate_ = null;
+    /** @private {!Date} */
+    this.focusedDate_ = this.today_;
 
     /** @private {?Date} */
     this.min_ = null;
@@ -125,12 +138,31 @@ export class AmpDateCalendar extends AMP.BaseElement {
     /** @private {!CalendarLabelFormats} */
     this.formats_ = new CalendarLabelFormats(this.locales_);
 
+    this.phrases_ = this.getPhrases_();
+
     /** @private @const */
     this.modifiers_ = this.createModifiers_();
 
     /** @private */
     this.capturedFocus_ = false;
 
+    /** @private {!ActiveDateState} */
+    this.activeDate_ = ActiveDateState.START_DATE;
+
+    /** @private @const */
+    this.boundOnGridFocusCaptureChange_ =
+        this.onGridFocusCaptureChange_.bind(this);
+    /** @private @const */
+    this.boundOnGridFocusChange_ = this.onGridFocusChange_.bind(this);
+    /** @private @const */
+    this.boundOnHoverChange_ = this.onHoverChange_.bind(this);
+    /** @private @const */
+    this.boundOnKeyboardNavigate_ = this.onKeyboardNavigate_.bind(this);
+    /** @private @const */
+    this.boundOnSelectDate_ = this.onSelectDate_.bind(this);
+
+    /** @private {?LitCalendar} */
+    this.litCalendar_ = null;
     // this.ampDateParser_ = null;
     // Services.ampDateParserForDocOrNull(this.element).then(adp => {
     //   this.ampDateParser = adp;
@@ -143,7 +175,9 @@ export class AmpDateCalendar extends AMP.BaseElement {
         this.element.hasAttribute('rtl');
 
     const type = this.element.getAttribute('type');
-    this.type_ = AmpCalendarType[type];
+    this.type_ = type == AmpCalendarType.SINGLE ?
+      AmpCalendarType.SINGLE :
+      AmpCalendarType.RANGE;
 
     const date = this.element.getAttribute('date');
     this.selectedDate_ = date ? parseIsoDateToLocal(date) : null;
@@ -191,101 +225,148 @@ export class AmpDateCalendar extends AMP.BaseElement {
     this.numberOfMonths_ = Number(numberOfMonths) || 2;
 
     this.container_ = this.document_.createElement('div');
+
+    this.litCalendar_ = new LitCalendar(this.container_);
+    this.litCalendar_.listen();
+
     this.render_();
 
     this.element.appendChild(this.container_);
+
+    // TODO(cvializ): Queue first click for select too?
+    // const {activeElement} = this.document_;
+    // if (this.element.contains(activeElement)) {
+    //   this.handleFocusin_(dev().assertElement(activeElement));
+    // }
+
+    listen(this.element, 'click', e => {
+      const {target} = e;
+
+      if (target == this.getNextButton_()) {
+        this.setDisplayedDate_(getNextMonth(this.displayedDate_),
+            getNextMonth(this.focusedDate_));
+      } else if (target == this.getPreviousButton_()) {
+        this.setDisplayedDate_(getPreviousMonth(this.displayedDate_),
+            getPreviousMonth(this.focusedDate_));
+      }
+      this.render_();
+    });
   }
 
   /** @override */
   layoutCallback() {
-    listen(this.element, 'click', e => {
-      const {target} = e;
-
-      const dateString = target.dataset['iAmphtmlDate'];
-      if (dateString) {
-        const date = new Date(Number(dateString));
-        // TODO(cvializ): improve
-        if (target.closest('.outside-disabled')) {
-          return;
-        }
-        if (!this.canSelect_(date)) {
-          return;
-        }
-
-        this.setSelectedDate_(date);
-      } else {
-        if (e.target == this.getNextButton_()) {
-          this.displayedDate_ = getNextMonth(this.displayedDate_);
-        } else if (e.target == this.getPreviousButton_()) {
-          this.displayedDate_ = getPreviousMonth(this.displayedDate_);
-        } else if (e.target == this.today_) {
-          this.displayedDate_ = new Date();
-        }
-        this.render_();
-      }
-    });
-
-    listen(this.element, 'mouseover', e => {
-      const {target} = e;
-
-      const dateString = target.dataset['iAmphtmlDate'];
-      if (dateString) {
-        this.hoveredDate_ = new Date(Number(dateString));
-        this.render_();
-      }
-    });
-
-    listen(this.element, 'mouseout', e => {
-      // TODO(cvializ): Don't clear if the user is still in the month table but
-      // not on another date
-      const {relatedTarget} = e;
-      if (!relatedTarget || !relatedTarget.dataset['iAmphtmlDate']) {
-        this.hoveredDate_ = null;
-        this.render_();
-      }
-    });
-
-    listen(this.element, 'focusin', e => {
-      const {target} = e;
-      const dateString = target.dataset.iAmphtmlDate;
-      if (dateString) {
-        this.focusedDate_ = new Date(Number(dateString));
-      }
-      if (this.container_.contains(target)) {
-        this.capturedFocus_ = true;
-      }
-    });
-
-    listen(this.element, 'focusout', e => {
-      const {relatedTarget} = e;
-      if (!this.container_.contains(relatedTarget)) {
-        this.capturedFocus_ = false;
-      }
-    });
-
-    listen(this.element, 'keydown', e => {
-      const {element} = this;
-      if (this.capturedFocus_ && this.focusedDate_) {
-        let numberOfDays = 0;
-        switch (e.keyCode) {
-          case KeyCodes.RIGHT_ARROW: numberOfDays = 1; break;
-          case KeyCodes.LEFT_ARROW: numberOfDays = -1; break;
-          case KeyCodes.DOWN_ARROW: numberOfDays = 7; break;
-          case KeyCodes.UP_ARROW: numberOfDays = -7; break;
-          default:
-            return;
-        }
-
-        const destinationDay = addToDate(this.focusedDate_, 0, 0, numberOfDays);
-        const millis = Number(destinationDay);
-        const destinationElement = element.querySelector(
-            `[data-i-amphtml-date=${escapeCssSelectorIdent(millis)}]`);
-        destinationElement.focus();
-        this.focusedDate_ = destinationDay;
-      }
-    });
-
     return Promise.resolve();
+  }
+
+  /**
+   * Update the focused date state. This is read by a modifier.
+   * @param {!Date} date
+   */
+  onGridFocusChange_(date) {
+    this.focusedDate_ = date;
+    this.render_();
+  }
+
+  /**
+   * Update the focus capture state.
+   * @param {boolean} isCaptured
+   */
+  onGridFocusCaptureChange_(isCaptured) {
+    this.capturedFocus_ = isCaptured;
+  }
+
+  /**
+   * Change the hover state
+   * @param {?Date} date
+   */
+  onHoverChange_(date) {
+    this.hoveredDate_ = date;
+  }
+
+  /**
+   * @param {?Date} date
+   */
+  onKeyboardNavigate_(date) {
+    if (this.capturedFocus_ && this.focusedDate_) {
+      if (!date) {
+        return;
+      }
+
+      const destinationDay = /** @type {!Date} */ (date);
+      let waitForRender;
+
+      if (!this.isVisibleDate_(destinationDay)) {
+        // We need to render some new months
+        const newDisplayedDate = getFirstDayOfMonth(destinationDay);
+        this.setDisplayedDate_(newDisplayedDate, destinationDay);
+        waitForRender = this.render_();
+      } else {
+        waitForRender = Promise.resolve();
+      }
+
+      waitForRender.then(() => {
+        const success = this.tryFocusDate_(destinationDay);
+        if (success) {
+          this.focusedDate_ = destinationDay;
+          this.render_(); // render again to sync the successful state
+        }
+      });
+    }
+  }
+
+  /**
+   * @param {?Date} date
+   */
+  onSelectDate_(date) {
+    if (date && !this.canSelect_(date)) {
+      return;
+    }
+
+    switch (this.activeDate_) {
+      case ActiveDateState.DATE:
+        this.setSelectedDate_(date);
+        break;
+      case ActiveDateState.START_DATE:
+        this.setSelectedStartDate_(date);
+        this.activeDate_ = ActiveDateState.END_DATE;
+        break;
+      case ActiveDateState.END_DATE:
+        this.setSelectedEndDate_(date);
+        this.activeDate_ = ActiveDateState.START_DATE;
+        break;
+      case ActiveDateState.NONE:
+      default:
+    }
+  }
+
+  /**
+   * Check if the given date is currently shown in the calendar.
+   * @param {!Date} date
+   */
+  isVisibleDate_(date) {
+    const lastDisplayedDate =
+        addToDate(this.displayedDate_, 0, this.numberOfMonths_);
+    return isBetween(this.displayedDate_, lastDisplayedDate, date);
+  }
+
+  /**
+   * Try to move focus to the destination date.
+   * @param {!Date} date
+   * @return {boolean}
+   * @private
+   */
+  tryFocusDate_(date) {
+    const millis = String(Number(date));
+    // TODO(cvializ): put the outside class on the button?
+    const destinationElement = scopedQuerySelector(this.element,
+        `:not(.outside) >
+        [data-i-amphtml-date=${escapeCssSelectorIdent(millis)}]`);
+    if (!destinationElement) {
+      return false;
+    } else {
+      destinationElement.focus();
+      return true;
+    }
   }
 
   /** @override */
@@ -312,13 +393,32 @@ export class AmpDateCalendar extends AMP.BaseElement {
       mutated = true;
     }
 
+    if (mutations['active-date'] != null) {
+      this.activeDate_ = mutations['active-date'];
+      if (this.activeDate_) {
+        this.element.setAttribute('active-date', this.activeDate_);
+      } else {
+        this.element.removeAttribute('active-date');
+      }
+      mutated = true;
+    }
+
     if (mutated) {
       this.render_();
     }
   }
 
   /**
+   * Get the list of phrases
+   * @return {!./phrases.PhrasesDef}
+   */
+  getPhrases_() {
+    return map(defaultPhrases);
+  }
+
+  /**
    * @return {!Object<string,function(!Date):boolean>}
+   * @private
    */
   createModifiers_() {
     return {
@@ -338,6 +438,7 @@ export class AmpDateCalendar extends AMP.BaseElement {
       [CalendarDayStates.SELECTED_START]: date => this.isSelectedStart_(date),
       [CalendarDayStates.SELECTED]: date => this.isSelected_(date),
       [CalendarDayStates.TODAY]: date => isSameDay(date, this.today_),
+      [CalendarDayStates.FOCUSED]: date => isSameDay(date, this.focusedDate_), // TODO(cvializ): needed?
     };
   }
 
@@ -345,6 +446,7 @@ export class AmpDateCalendar extends AMP.BaseElement {
    *
    * @param {!Date} date
    * @return {boolean}
+   * @private
    */
   isHoveredSpan_(date) {
     if (!this.hoveredDate_) {
@@ -363,19 +465,29 @@ export class AmpDateCalendar extends AMP.BaseElement {
    *
    * @param {!Date} date
    * @return {boolean}
+   * @private
    */
   isOutOfRange_(date) {
-    if (this.max_) {
+    if (this.max_ && this.min_) {
       return !isBetweenInclusive(this.min_, this.max_, date);
-    } else {
-      return !isInclusivelyAfter(date, this.min_);
     }
+
+    if (this.min_) {
+      return !isAfterInclusive(date, this.min_);
+    }
+
+    if (this.max_) {
+      return isAfter(date, this.max_);
+    }
+
+    return false;
   }
 
   /**
    *
    * @param {!Date} date
    * @return {boolean}
+   * @private
    */
   isBlocked_(date) {
     return this.blocked_.some(blocked => isSameDay(date, blocked));
@@ -385,6 +497,7 @@ export class AmpDateCalendar extends AMP.BaseElement {
    *
    * @param {!Date} date
    * @return {boolean}
+   * @private
    */
   isHighlighted_(date) {
     return this.highlighted_.some(highlighted => isSameDay(date, highlighted));
@@ -394,27 +507,31 @@ export class AmpDateCalendar extends AMP.BaseElement {
    *
    * @param {!Date} date
    * @return {boolean}
+   * @private
    */
   isSelectedEnd_(date) {
-    return this.selectedEndDate_ && isSameDay(date, this.selectedEndDate_);
+    return !!this.selectedEndDate_ && isSameDay(date, this.selectedEndDate_);
   }
 
   /**
    *
    * @param {!Date} date
    * @return {boolean}
+   * @private
    */
   isSelectedStart_(date) {
-    return this.selectedStartDate_ && isSameDay(date, this.selectedStartDate_);
+    return !!this.selectedStartDate_ &&
+        isSameDay(date, this.selectedStartDate_);
   }
 
   /**
    *
    * @param {!Date} date
    * @return {boolean}
+   * @private
    */
   isSelectedSpan_(date) {
-    return this.selectedStartDate_ && this.selectedEndDate_ &&
+    return !!this.selectedStartDate_ && !!this.selectedEndDate_ &&
         isBetween(this.selectedStartDate_, this.selectedEndDate_, date);
   }
 
@@ -422,6 +539,7 @@ export class AmpDateCalendar extends AMP.BaseElement {
    *
    * @param {!Date} date
    * @return {boolean}
+   * @private
    */
   isSelected_(date) {
     return !!this.selectedDate_ && isSameDay(date, this.selectedDate_);
@@ -430,6 +548,7 @@ export class AmpDateCalendar extends AMP.BaseElement {
   /**
    * @param {!Date} date
    * @return {boolean}
+   * @private
    */
   canSelect_(date) {
     return !this.isBlocked_(date) && !this.isOutOfRange_(date);
@@ -438,15 +557,16 @@ export class AmpDateCalendar extends AMP.BaseElement {
   /**
    * Gets the date to focus;
    * @return {!Date}
+   * @private
    */
   getFocusedDate_() {
     if (this.focusedDate_) {
       return this.focusedDate_;
     }
 
-    const primary = this.type == AmpCalendarType.SINGLE ?
+    const primary = this.type_ == AmpCalendarType.SINGLE ?
       this.selectedDate_ :
-      (this.selectedStartDate_ || this.selectedEndDate);
+      (this.selectedStartDate_ || this.selectedEndDate_);
 
     return primary || this.today_;
   }
@@ -454,6 +574,7 @@ export class AmpDateCalendar extends AMP.BaseElement {
   /**
    * Get the next button
    * @return {?Element}
+   * @private
    */
   getNextButton_() {
     return this.nextButton_ ||
@@ -463,38 +584,98 @@ export class AmpDateCalendar extends AMP.BaseElement {
   /**
    * Get the previous button
    * @return {?Element}
+   * @private
    */
   getPreviousButton_() {
-    return this.previousButton_ ||
-        (this.previousButton_ = this.element.getElementsByClassName('previous')[0]);
+    return this.previousButton_ || (this.previousButton_ =
+        this.element.getElementsByClassName('previous')[0]);
   }
 
   /**
-   * Render the months
+   * Render the months.
+   * @return {!Promise}
+   * @private
    */
   render_() {
-    const calendar = renderCalendar({
+    return this.litCalendar_.render({
       daySize: 39,
       displayedDate: this.displayedDate_,
       enableOutsideDays: this.enableOutsideDays_,
       firstDayOfWeek: this.firstDayOfWeek_,
+      focusedDate: this.focusedDate_,
       formats: this.formats_,
       isRtl: this.isRtl_,
       modifiers: this.modifiers_,
       numberOfMonths: this.numberOfMonths_,
+      onGridFocusCaptureChange: this.boundOnGridFocusCaptureChange_,
+      onGridFocusChange: this.boundOnGridFocusChange_,
+      onHoverChange: this.boundOnHoverChange_,
+      onKeyboardNavigate: this.boundOnKeyboardNavigate_,
+      onSelectDate: this.boundOnSelectDate_,
+      phrases: this.phrases_,
     });
-
-    render(calendar, this.container_);
   }
 
   /**
    * Update the selected date
    * @param {?Date} date
+   * @private
    */
   setSelectedDate_(date) {
     this.selectedDate_ = date;
-    this.focusedDate_ = date;
+    this.updateDateSelection_(date);
+  }
+
+  /**
+   * Update the selected start date
+   * @param {?Date} date
+   * @private
+   */
+  setSelectedStartDate_(date) {
+    this.selectedStartDate_ = date;
+    this.updateDateSelection_(date);
+  }
+
+  /**
+   * Update the selected start date
+   * @param {?Date} date
+   * @private
+   */
+  setSelectedEndDate_(date) {
+    this.selectedEndDate_ = date;
+    this.updateDateSelection_(date);
+  }
+
+  /**
+   * Common behavior any time a selected date is moved
+   * @param {?Date} date
+   */
+  updateDateSelection_(date) {
+    if (date) {
+      this.focusedDate_ = date;
+
+      if (!this.isVisibleDate_(date)) {
+        this.setDisplayedDate_(getFirstDayOfMonth(date));
+      }
+    }
+
     this.render_();
+  }
+
+  /**
+   * Sets the displayed date and if necessary updates the focused date
+   * @param {!Date} date
+   * @param {!Date=} opt_focusedDate
+   * @private
+   */
+  setDisplayedDate_(date, opt_focusedDate) {
+    // TODO(cvializ): better message? Do automatically?
+    dev().assert(date.getDate() == 1, 'Sanity check failed');
+    this.displayedDate_ = date;
+    const lastDisplayedDate = addToDate(date, 0, this.numberOfMonths_);
+    if (!isBetween(this.displayedDate_, lastDisplayedDate, date)) {
+      this.focusedDate_ = opt_focusedDate || date;
+    }
   }
 }
 

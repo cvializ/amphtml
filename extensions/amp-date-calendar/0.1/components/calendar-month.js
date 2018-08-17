@@ -15,6 +15,7 @@
  */
 
 import {
+  addToDate,
   getDaysInMonth,
   getFirstDayOfMonth,
   getFirstWeekday,
@@ -23,8 +24,6 @@ import {
 
 import {html as litHtml} from 'lit-html/lit-html';
 import {render as renderCalendarDay} from './calendar-day';
-
-const DAY_MILLISECONDS = 86400000;
 
 const DEFAULT_BORDER_SPACING = 0;
 
@@ -36,7 +35,8 @@ const DEFAULT_BORDER_SPACING = 0;
  *  formats: !../calendar-label-formats.CalendarLabelFormats,
  *  isRtl: boolean,
  *  modifiers: !Object<string,function(!Date):boolean>,
- *  month: !Date
+ *  month: !Date,
+ *  phrases: !../phrases.PhrasesDef,
  * }}
  */
 let CalendarMonthPropsDef;
@@ -55,6 +55,7 @@ export function render(props) {
     formats,
     modifiers,
     month,
+    phrases,
   } = props;
 
   const title = formats.month(month);
@@ -64,7 +65,7 @@ export function render(props) {
     // TODO(cvializ): Remove isRtl if I render the weekdays inside the table
     const formatWeekday = formats.weekday.bind(formats);
     const name = getWeekdayName(i, formatWeekday, firstDayOfWeek/*, isRtl*/);
-    weekdays.push(litHtml`<th>${name}</th>`);
+    weekdays.push(litHtml`<th><small>${name}</small></th>`);
   }
 
   const cells =
@@ -78,15 +79,18 @@ export function render(props) {
       formats,
       isOutsideDay,
       modifiers,
+      phrases,
       value,
     });
   };
   const calendarWidth = getCalendarWidth(daySize, DEFAULT_BORDER_SPACING);
 
+  // TODO
+  // https://www.w3.org/TR/2018/WD-wai-aria-practices-1.2-20180719/#grid
   const calendarHtml = litHtml`
   <div class="x-calendar-month" style="width: ${calendarWidth}px">
     <div class="x-calendar-month-title">${title}</div>
-    <table>
+    <table role="grid">
       <tr class="x-weekdays">${weekdays}</tr>
       <tr>${c()}${c()}${c()}${c()}${c()}${c()}${c()}</tr>
       <tr>${c()}${c()}${c()}${c()}${c()}${c()}${c()}</tr>
@@ -117,7 +121,7 @@ let CalendarCellDef;
  * @return {function():!CalendarCellDef}
  */
 function generateCalendarCells(date, firstDayOfWeek) {
-  const millis = Number(getFirstDayOfMonth(date));
+  const firstDayOfMonth = getFirstDayOfMonth(date);
   const firstWeekday = getFirstWeekday(date, firstDayOfWeek);
   const daysInMonth = getDaysInMonth(date);
 
@@ -130,7 +134,7 @@ function generateCalendarCells(date, firstDayOfWeek) {
          days >= daysInMonth
       );
 
-      const value = new Date(millis + DAY_MILLISECONDS * days++);
+      const value = addToDate(firstDayOfMonth, 0, 0, days++);
       cells.push({value, outsideDay});
     }
   }

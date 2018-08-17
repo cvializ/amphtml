@@ -15,11 +15,7 @@
  */
 
 import {CalendarDayStates} from '../calendar-day-states';
-import {
-  chooseAvailableStartDate,
-  getPhrase,
-  dateIsUnavailable
-} from '../phrases';
+import {getPhrase} from '../phrases';
 import {html as litHtml} from 'lit-html/lit-html';
 
 /**
@@ -29,6 +25,7 @@ import {html as litHtml} from 'lit-html/lit-html';
  *  isOutsideDay: function(!Date):boolean,
  *  formats: !../calendar-label-formats.CalendarLabelFormats,
  *  modifiers: !Object<string,function(!Date):boolean>,
+ *  phrases: !../phrases.PhrasesDef,
  *  value: !Date
  * }}
  */
@@ -46,12 +43,19 @@ export function render(props) {
     formats,
     isOutsideDay,
     modifiers,
+    phrases,
     value,
   } = props;
 
-  const outside = isOutsideDay(value) && !enableOutsideDays;
+  const {
+    dateIsUnavailable,
+    chooseAvailableDate,
+  } = phrases;
+
+  // const outsideAndDisabled = isOutsideDay(value);
+  const outsideButEnableable = isOutsideDay(value) && !enableOutsideDays;
   const labels =
-      outside ? [] : getModifiers(modifiers, value);
+      outsideButEnableable ? [] : getModifiers(modifiers, value);
   if (isOutsideDay(value)) {
     labels.push('outside');
     if (!enableOutsideDays) {
@@ -60,15 +64,18 @@ export function render(props) {
   }
 
   const blocked = modifiers[CalendarDayStates.BLOCKED_CALENDAR](value);
+  const blockedOutOfRange =
+      modifiers[CalendarDayStates.BLOCKED_OUT_OF_RANGE](value);
+  const focused = modifiers[CalendarDayStates.FOCUSED](value);
   const formattedDay = formats.day(value);
   const formattedDate = formats.date(value);
 
-  const ariaLabel = blocked ?
+  const ariaLabel = (blocked || blockedOutOfRange) ?
     getPhrase(dateIsUnavailable, {date: formattedDate}) :
-    getPhrase(chooseAvailableStartDate, {date: formattedDate});
+    getPhrase(chooseAvailableDate, {date: formattedDate});
 
-  const valueAttr = outside ? 0 : Number(value);
-  const tabindex = getTabindex(blocked, outside);
+  const valueAttr = outsideButEnableable ? 0 : Number(value);
+  const tabindex = focused && !outsideButEnableable ? '0' : '-1';
   return litHtml`
   <td
     style="width: ${daySize}px; height: ${daySize}px"
@@ -79,17 +86,8 @@ export function render(props) {
       tabindex="${tabindex}"
       class="x-day-button"
       data-i-amphtml-date="${valueAttr}"
-    >${outside ? '' : formattedDay}</button>
+    >${outsideButEnableable ? '' : formattedDay}</button>
   </td>`;
-}
-
-/**
- * @param {boolean} blocked
- * @param {boolean} outside
- * @return {string}
- */
-function getTabindex(blocked, outside) {
-  return blocked || outside ? '-1' : '0';
 }
 
 /**

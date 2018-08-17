@@ -32,6 +32,7 @@ import {render as renderCalendarMonth} from './calendar-month';
  *  isRtl: boolean,
  *  modifiers: !Object<string,function(!Date):boolean>,
  *  numberOfMonths: number,
+ *  phrases: !../phrases.PhrasesDef,
  * }}
  */
 let CalendarPropsDef;
@@ -51,6 +52,7 @@ export function render(props) {
     isRtl,
     modifiers,
     numberOfMonths,
+    phrases,
   } = props;
 
   const months = [];
@@ -64,6 +66,7 @@ export function render(props) {
       isRtl,
       modifiers,
       month,
+      phrases,
     }));
     month = getNextMonth(month);
   }

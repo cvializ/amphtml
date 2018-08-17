@@ -29,7 +29,7 @@ tags: {
   html_format: AMP
   tag_name: "AMP-DATE-PICKER"
   spec_name: "amp-date-picker[type=single][mode=static]"
-  requires_extension: "amp-date-picker"
+  requires_extension: "amp-mate-picker"
   attrs: {
     name: "mode"
     value_casei: "static"

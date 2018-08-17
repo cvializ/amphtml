@@ -48,8 +48,9 @@ amp-date-calendar table {
   border-spacing: 0;
 }
 
-amp-date-calendar .x-weekdays {
+amp-date-calendar .x-weekdays th {
   color: #565a5c;
+  font-weight: normal;
 }
 
 amp-date-calendar .x-container {
@@ -145,4 +146,5 @@ amp-date-calendar .x-day.outside-disabled {
   background: transparent;
   border: 1px solid transparent;
   color: transparent;
+  pointer-events: none;
 }

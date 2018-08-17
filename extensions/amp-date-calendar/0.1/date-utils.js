@@ -80,9 +80,19 @@ export function getFirstWeekday(date, firstDayOfWeek) {
 /**
  * Gets the first day of the month.
  * @param {!Date} date
+ * @return {!Date}
  */
 export function getFirstDayOfMonth(date) {
   return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+/**
+ * Get the last day of the month
+ * @param {!Date} date
+ * @return {!Date}
+ */
+export function getLastDayOfMonth(date) {
+  return new Date(date.getFullYear(), date.getMonth() + 1, -1);
 }
 
 /**
@@ -111,6 +121,7 @@ export function isBetweenInclusive(a, b, test) {
  * Check if two dates are on the same day.
  * @param {!Date} a
  * @param {!Date} b
+ * @return {boolean}
  */
 export function isSameDay(a, b) {
   return Number(getDay(a)) == Number(getDay(b));
@@ -119,14 +130,15 @@ export function isSameDay(a, b) {
 /**
  * Gets the day at midnight local time
  * @param {!Date} date
+ * @return {!Date}
  */
 export function getDay(date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
 /**
- *
  * @param {string} input
+ * @return {!Date}
  */
 export function parseIsoDateToLocal(input) {
   const date = new Date(input);
@@ -137,11 +149,22 @@ export function parseIsoDateToLocal(input) {
 }
 
 /**
+ * True if a is after b
+ * @param {!Date} a
+ * @param {!Date} b
+ * @return {boolean}
+ */
+export function isAfter(a, b) {
+  return getDay(a) > getDay(b);
+}
+
+/**
  * True if a is inclusively after b
  * @param {!Date} a
  * @param {!Date} b
+ * @return {boolean}
  */
-export function isInclusivelyAfter(a, b) {
+export function isAfterInclusive(a, b) {
   return getDay(a) >= getDay(b);
 }
 
@@ -155,6 +178,7 @@ export function isInclusivelyAfter(a, b) {
  * @param {number} opt_hours
  * @param {number} opt_minutes
  * @param {number} opt_seconds
+ * @return {!Date}
  */
 export function addToDate(date,
   opt_years = 0, opt_months = 0, opt_days = 0,
