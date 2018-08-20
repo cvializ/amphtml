@@ -15,7 +15,7 @@
  */
 
 import {CalendarDayStates} from '../calendar-day-states';
-import {getPhrase} from '../phrases';
+import {getPhrase, Phrases} from '../phrases';
 import {html as litHtml} from 'lit-html/lit-html';
 
 /**
@@ -47,10 +47,8 @@ export function render(props) {
     value,
   } = props;
 
-  const {
-    dateIsUnavailable,
-    chooseAvailableDate,
-  } = phrases;
+  const dateIsUnavailable = phrases[Phrases.DATE_IS_UNAVAILABLE];
+  const chooseAvailableDate = phrases[Phrases.CHOOSE_AVAILABLE_DATE];
 
   // const outsideAndDisabled = isOutsideDay(value);
   const outsideButEnableable = isOutsideDay(value) && !enableOutsideDays;
@@ -64,27 +62,29 @@ export function render(props) {
   }
 
   const blocked = modifiers[CalendarDayStates.BLOCKED_CALENDAR](value);
+  const blockedMinimumNights =
+      modifiers[CalendarDayStates.BLOCKED_MINIMUM_NIGHTS](value);
   const blockedOutOfRange =
       modifiers[CalendarDayStates.BLOCKED_OUT_OF_RANGE](value);
   const focused = modifiers[CalendarDayStates.FOCUSED](value);
   const formattedDay = formats.day(value);
   const formattedDate = formats.date(value);
 
-  const ariaLabel = (blocked || blockedOutOfRange) ?
+  const classAttr = ['i-amphtml-date-calendar-day'].concat(labels).join(' ');
+  const ariaLabel = (blocked || blockedMinimumNights || blockedOutOfRange) ?
     getPhrase(dateIsUnavailable, {date: formattedDate}) :
     getPhrase(chooseAvailableDate, {date: formattedDate});
-
   const valueAttr = outsideButEnableable ? 0 : Number(value);
   const tabindex = focused && !outsideButEnableable ? '0' : '-1';
   return litHtml`
   <td
     style="width: ${daySize}px; height: ${daySize}px"
-    class="x-day${labels.length ? ' ' + labels.join(' ') : ''}"
+    class="${classAttr}"
   >
     <button
       aria-label="${ariaLabel}"
       tabindex="${tabindex}"
-      class="x-day-button"
+      class="i-amphtml-date-calendar-day-button"
       data-i-amphtml-date="${valueAttr}"
     >${outsideButEnableable ? '' : formattedDay}</button>
   </td>`;

@@ -19,6 +19,8 @@ import {
   addToDate,
   getFirstDayOfMonth,
   getLastDayOfMonth,
+  getNextMonth,
+  getPreviousMonth,
 } from './date-utils';
 import {dev} from '../../../src/log';
 import {listen} from '../../../src/event-helper';
@@ -43,6 +45,7 @@ export const ActiveDateState = {
  *  isRtl: boolean,
  *  modifiers: !Object<string,function(!Date):boolean>,
  *  numberOfMonths: number,
+ *  onDisplayedDateChange: function(!Date):undefined,
  *  onGridFocusCaptureChange: function(boolean):undefined,
  *  onGridFocusChange: function(!Date):undefined,
  *  onHoverChange: function(?Date):undefined,
@@ -53,6 +56,11 @@ export const ActiveDateState = {
  */
 let LitCalendarPropsDef;
 
+/**
+ * A calendar class that renders and triggers listeners on keyboard navigation.
+ * This class does not change its own state. The owner class will set the props
+ * in response to the provided listeners.
+ */
 export class LitCalendar {
   /**
    * Create a new calendar. Handles event listeners and rendering.
@@ -73,11 +81,33 @@ export class LitCalendar {
   listen() {
     listen(this.element, 'click', e => {
       const {target} = e;
-      const {onSelectDate} = this.getProps_();
+      const {
+        displayedDate,
+        isRtl,
+        onDisplayedDateChange,
+        onSelectDate,
+      } = this.getProps_();
 
       const dateString = target.dataset['iAmphtmlDate'];
       if (dateString) {
         onSelectDate(new Date(Number(dateString)));
+        return;
+      }
+
+      if (target.classList.contains('i-amphtml-date-calendar-right')) {
+        const month = isRtl ?
+          getPreviousMonth(displayedDate) :
+          getNextMonth(displayedDate);
+        onDisplayedDateChange(month);
+        return;
+      }
+
+      if (target.classList.contains('i-amphtml-date-calendar-left')) {
+        const month = isRtl ?
+          getNextMonth(displayedDate) :
+          getPreviousMonth(displayedDate);
+        onDisplayedDateChange(month);
+        return;
       }
     });
 
@@ -94,12 +124,9 @@ export class LitCalendar {
     listen(this.element, 'mouseout', e => {
       // TODO(cvializ): Don't clear if the user is still in the month table but
       // not on another date.
-      const {relatedTarget} = e;
       const {onHoverChange} = this.getProps_();
 
-      if (!relatedTarget || !relatedTarget.dataset['iAmphtmlDate']) {
-        onHoverChange(null);
-      }
+      onHoverChange(null);
     });
 
     listen(this.element, 'focusin', e => {

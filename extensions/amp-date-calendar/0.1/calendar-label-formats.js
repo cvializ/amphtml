@@ -15,7 +15,7 @@
  */
 
 /**
- * Formats calendar labels for a given locale
+ * Formats calendar labels for a given locale.
  */
 export class CalendarLabelFormats {
   /**

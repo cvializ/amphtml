@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-import {calendarLabel} from '../phrases';
+import {
+  Phrases,
+  calendarLabel,
+} from '../phrases';
 import {
   getMonth,
   getNextMonth,
@@ -55,6 +58,11 @@ export function render(props) {
     phrases,
   } = props;
 
+  const jumpToPreviousMonth = phrases[Phrases.JUMP_TO_PREV_MONTH];
+  const jumpToNextMonth = phrases[Phrases.JUMP_TO_NEXT_MONTH];
+  const rightLabel = isRtl ? jumpToPreviousMonth : jumpToNextMonth;
+  const leftLabel = isRtl ? jumpToNextMonth : jumpToPreviousMonth;
+
   const months = [];
   let month = getMonth(displayedDate);
   for (let i = 0; i < numberOfMonths; i++) {
@@ -72,18 +80,27 @@ export function render(props) {
   }
 
   return litHtml`
-  <div class="x-container" aria-label=${calendarLabel} role="application">
-    <div class="stationary">
-      <div class="navigation">
-        <button class="next">Next</button>
-        <button class="previous">Prev</button>
-      </div>
-      <div class="header">
-        ⚡️
+  <div
+    class="i-amphtml-date-calendar-container"
+    aria-label=${calendarLabel}
+    role="application"
+  >
+    <div class="i-amphtml-date-calendar-stationary">
+      <div class="i-amphtml-date-calendar-header">
       </div>
     </div>
-    <div class="picker">
+    <div class="i-amphtml-date-calendar-picker">
       ${months}
+    </div>
+    <div class="i-amphtml-date-calendar-navigation">
+      <button
+        class="i-amphtml-date-calendar-right"
+        aria-label=${rightLabel}
+      ></button>
+      <button
+        class="i-amphtml-date-calendar-left"
+        aria-label=${leftLabel}
+      ></button>
     </div>
   </div>
   `;

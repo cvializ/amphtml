@@ -88,10 +88,10 @@ export function render(props) {
   // TODO
   // https://www.w3.org/TR/2018/WD-wai-aria-practices-1.2-20180719/#grid
   const calendarHtml = litHtml`
-  <div class="x-calendar-month" style="width: ${calendarWidth}px">
-    <div class="x-calendar-month-title">${title}</div>
+  <div class="i-amphtml-date-calendar-month" style="width: ${calendarWidth}px">
+    <div class="i-amphtml-date-calendar-month-title">${title}</div>
     <table role="grid">
-      <tr class="x-weekdays">${weekdays}</tr>
+      <tr class="i-amphtml-date-calendar-weekdays">${weekdays}</tr>
       <tr>${c()}${c()}${c()}${c()}${c()}${c()}${c()}</tr>
       <tr>${c()}${c()}${c()}${c()}${c()}${c()}${c()}</tr>
       <tr>${c()}${c()}${c()}${c()}${c()}${c()}${c()}</tr>

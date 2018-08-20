@@ -28,5 +28,5 @@ export const CalendarDayStates = {
   SELECTED_START: 'selected-start',
   SELECTED: 'selected',
   TODAY: 'today',
-  FOCUSED: 'focused'
+  FOCUSED: 'focused',
 };

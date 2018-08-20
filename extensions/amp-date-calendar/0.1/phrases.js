@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import {isArray} from '../../../src/types';
-
 /**
  * These keys will be used by publishers to specify i18n values.
  * @enum {string}
@@ -110,13 +108,16 @@ export const defaultPhrases = {
   [Phrases.MOVE_FOCUS_TO_START_AND_END_OF_WEEK]: moveFocusToStartAndEndOfWeek,
   [Phrases.RETURN_FOCUS_TO_INPUT]: returnFocusToInput,
   [Phrases.KEYBOARD_NAVIGATION_INSTRUCTIONS]: keyboardNavigationInstructions,
-  // [Phrases.CHOOSE_AVAILABLE_START_DATE]: chooseAvailableStartDate,
-  // [Phrases.CHOOSE_AVAILABLE_END_DATE]: chooseAvailableEndDate,
   [Phrases.CHOOSE_AVAILABLE_DATE]: chooseAvailableDate,
   [Phrases.DATE_IS_UNAVAILABLE]: dateIsUnavailable,
 };
 
-// REVIEW: Is there a better way to do substitutions like this?
+/**
+ * Matches the substitution token `%s` and avoids matching `%%s`
+ * REVIEW: Is there a better way to do substitutions like this?
+ * An alternative I considered was an Array with spaces,
+ * e.g. ['Select ', ' as your date'] and ['', ''] for the date by itself.
+ */
 const SUBSTITUTE_RE = /(?<!%)%s/g;
 
 /**
@@ -125,14 +126,8 @@ const SUBSTITUTE_RE = /(?<!%)%s/g;
  * @return {string}
  */
 export function getPhrase(phrase, opt_args) {
-  if (typeof phrase === 'string') {
-    return phrase;
-  }
-  if (isArray(phrase) && opt_args) {
-    return phrase.replace(SUBSTITUTE_RE, opt_args.date);
-  }
-  return '';
+  return phrase.replace(SUBSTITUTE_RE, (opt_args && opt_args.date));
 }
 
-/** @typedef {!Object<string, string|!Array>} */
+/** @typedef {!Object<string, string>} */
 export let PhrasesDef;
