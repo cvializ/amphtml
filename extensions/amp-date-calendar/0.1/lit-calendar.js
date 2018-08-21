@@ -121,11 +121,8 @@ export class LitCalendar {
       }
     });
 
-    listen(this.element, 'mouseout', e => {
-      // TODO(cvializ): Don't clear if the user is still in the month table but
-      // not on another date.
+    listen(this.element, 'mouseout', () => {
       const {onHoverChange} = this.getProps_();
-
       onHoverChange(null);
     });
 

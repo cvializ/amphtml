@@ -78,16 +78,14 @@ export function render(props) {
   const tabindex = focused && !outsideButEnableable ? '0' : '-1';
   return litHtml`
   <td
-    style="width: ${daySize}px; height: ${daySize}px"
+    style="width: ${daySize}px; height: ${daySize - 1}px"
     class="${classAttr}"
-  >
-    <button
-      aria-label="${ariaLabel}"
-      tabindex="${tabindex}"
-      class="i-amphtml-date-calendar-day-button"
-      data-i-amphtml-date="${valueAttr}"
-    >${outsideButEnableable ? '' : formattedDay}</button>
-  </td>`;
+    role="button"
+    tabindex="${tabindex}"
+    aria-label="${ariaLabel}"
+    data-i-amphtml-date="${valueAttr}"
+  ><div>${outsideButEnableable ? '' : formattedDay}</div></td>`;
+  // TODO(cvializ): renderDay
 }
 
 /**

@@ -113,12 +113,12 @@ export const defaultPhrases = {
 };
 
 /**
- * Matches the substitution token `%s` and avoids matching `%%s`
+ * Matches the substitution token `%s`
  * REVIEW: Is there a better way to do substitutions like this?
  * An alternative I considered was an Array with spaces,
  * e.g. ['Select ', ' as your date'] and ['', ''] for the date by itself.
  */
-const SUBSTITUTE_RE = /(?<!%)%s/g;
+const SUBSTITUTE_RE = /%s/g;
 
 /**
  * @param {string} phrase

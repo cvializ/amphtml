@@ -14,24 +14,51 @@
  * limitations under the License.
  */
 
-.i-amphtml-date-calendar-day-button {
-  position: relative;
-  height: 100%;
+
+amp-date-calendar table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+amp-date-picker table * {
+  box-sizing: border-box;
+}
+
+.i-amphtml-date-calendar-day {
+  /* padding: 0; */
+  background-color: transparent;
+  border: 1px solid transparent;
+  color: #565a5c;
+}
+
+/*
+.i-amphtml-date-calendar-weekdays th {
+  color: #565a5c;
+  font-weight: normal;
+} */
+
+.i-amphtml-date-calendar-day {
+  /* position: relative; */
+  /* height: 100%;
   width: 100%;
   text-align: center;
   background: 0 0;
   border: 1px solid transparent;
   margin: 0;
   padding: 0;
-  color: inherit;
+  color: inherit; */
   cursor: pointer;
   line-height: normal;
   overflow: visible;
-  box-sizing: border-box;
   font-family: inherit;
   font-style: inherit;
   font-size: 14px;
 }
+
+.i-amphtml-date-calendar-day * {
+  pointer-events: none;
+}
+
 
 .i-amphtml-date-calendar-month-title {
   text-align: center;
@@ -42,15 +69,6 @@
   color: #fff;
 }
 
-amp-date-calendar table {
-  border-collapse: collapse;
-  border-spacing: 0;
-}
-
-.i-amphtml-date-calendar-weekdays th {
-  color: #565a5c;
-  font-weight: normal;
-}
 
 .i-amphtml-date-calendar-container {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
@@ -63,9 +81,6 @@ amp-date-calendar table {
   overflow: hidden;
 }
 
-.i-amphtml-date-calendar-container * {
-  box-sizing: border-box;
-}
 
 .i-amphtml-date-calendar-month {
   display: inline-block;
@@ -75,12 +90,6 @@ amp-date-calendar table {
   vertical-align: top;
 }
 
-.i-amphtml-date-calendar-day {
-  padding: 0;
-  background-color: transparent;
-  border: 1px solid transparent;
-  color: #565a5c;
-}
 
 .i-amphtml-date-calendar-day:hover,
 .CalendarDay_container:hover, /* remove after update to react-dates v16 */
@@ -89,9 +98,9 @@ amp-date-calendar table {
   border: 1px solid #e4e7e7;
 }
 
-.blocked-minimum-nights .i-amphtml-date-calendar-day-button,
-.blocked-calendar .i-amphtml-date-calendar-day-button,
-.blocked-out-of-range .i-amphtml-date-calendar-day-button {
+.blocked-minimum-nights.i-amphtml-date-calendar-day,
+.blocked-calendar.i-amphtml-date-calendar-day,
+.blocked-out-of-range.i-amphtml-date-calendar-day {
   cursor: default;
 }
 

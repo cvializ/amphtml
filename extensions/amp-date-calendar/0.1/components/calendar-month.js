@@ -61,12 +61,12 @@ export function render(props) {
   const title = formats.month(month);
 
   const weekdays = [];
-  for (let i = 0; i < 7; i++) {
-    // TODO(cvializ): Remove isRtl if I render the weekdays inside the table
-    const formatWeekday = formats.weekday.bind(formats);
-    const name = getWeekdayName(i, formatWeekday, firstDayOfWeek/*, isRtl*/);
-    weekdays.push(litHtml`<th><small>${name}</small></th>`);
-  }
+  // for (let i = 0; i < 7; i++) {
+  //   // TODO(cvializ): Remove isRtl if I render the weekdays inside the table
+  //   const formatWeekday = formats.weekday.bind(formats);
+  //   const name = getWeekdayName(i, formatWeekday, firstDayOfWeek/*, isRtl*/);
+  //   weekdays.push(litHtml`<th><small>${name}</small></th>`);
+  // }
 
   const cells =
       generateCalendarCells(month, firstDayOfWeek);

@@ -378,11 +378,9 @@ export class AmpDateCalendar extends AMP.BaseElement {
    * @private
    */
   tryFocusDate_(date) {
-    const millis = String(Number(date));
-    // TODO(cvializ): put the outside class on the button?
-    const destinationElement = scopedQuerySelector(this.element,
-        `:not(.outside) >
-        [data-i-amphtml-date=${escapeCssSelectorIdent(millis)}]`);
+    const m = String(Number(date));
+    const destinationElement = this.element.querySelector(
+        `[data-i-amphtml-date=${escapeCssSelectorIdent(m)}]:not(.outside)`);
     if (!destinationElement) {
       return false;
     } else {
@@ -426,6 +424,7 @@ export class AmpDateCalendar extends AMP.BaseElement {
    */
   getPhrases_() {
     const phrases = map(defaultPhrases);
+
     phrases[Phrases.CHOOSE_AVAILABLE_DATE] =
       this.type_ == AmpCalendarType.RANGE ?
         (this.activeDate_ == ActiveDateState.START_DATE ?
