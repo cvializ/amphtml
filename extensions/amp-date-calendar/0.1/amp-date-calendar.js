@@ -162,6 +162,8 @@ export class AmpDateCalendar extends AMP.BaseElement {
     this.boundOnKeyboardNavigate_ = this.onKeyboardNavigate_.bind(this);
     /** @private @const */
     this.boundOnSelectDate_ = this.onSelectDate_.bind(this);
+    /** @private @const */
+    this.boundRenderDay_ = this.renderDay_.bind(this);
 
     /** @private {?LitCalendar} */
     this.litCalendar_ = null;
@@ -712,6 +714,15 @@ export class AmpDateCalendar extends AMP.BaseElement {
   }
 
   /**
+   * @param {Date} date
+   * @return {!Promise}
+   */
+  renderDay_(date) {
+    return new Promise(
+        resolve => resolve(this.formats_.day(addToDate(date, 0, 0, 1))));
+  }
+
+  /**
    * Render the months.
    * @return {!Promise}
    * @private
@@ -735,6 +746,7 @@ export class AmpDateCalendar extends AMP.BaseElement {
       onKeyboardNavigate: this.boundOnKeyboardNavigate_,
       onSelectDate: this.boundOnSelectDate_,
       phrases: this.getPhrases_(), // TODO(cvializ): does this need to be more efficient?
+      renderDay: null, // this.boundRenderDay_,
     });
   }
 

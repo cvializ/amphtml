@@ -37,6 +37,7 @@ const DEFAULT_BORDER_SPACING = 0;
  *  month: !Date,
  *  monthTranslate: number,
  *  phrases: !../phrases.PhrasesDef,
+ *  renderDay: ?function(!Date):Promise
  * }}
  */
 let CalendarMonthPropsDef;
@@ -57,6 +58,7 @@ export function render(props) {
     month,
     monthTranslate,
     phrases,
+    renderDay,
   } = props;
 
   const title = formats.month(month);
@@ -73,6 +75,7 @@ export function render(props) {
       isOutsideDay,
       modifiers,
       phrases,
+      renderDay,
       value,
     });
   };

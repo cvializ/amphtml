@@ -41,7 +41,8 @@ import {html as litHtml} from 'lit-html/lit-html';
  *  modifiers: !Object<string,function(!Date):boolean>,
  *  monthTranslate: number,
  *  numberOfMonths: number,
- *  phrases: !../phrases.PhrasesDef
+ *  phrases: !../phrases.PhrasesDef,
+ *  renderDay: ?function(!Date):Promise
  * }}
  */
 let CalendarPropsDef;
@@ -63,6 +64,7 @@ export function render(props) {
     monthTranslate,
     numberOfMonths,
     phrases,
+    renderDay,
   } = props;
 
   const jumpToPreviousMonth = phrases[Phrases.JUMP_TO_PREV_MONTH];
@@ -83,6 +85,7 @@ export function render(props) {
       month,
       monthTranslate,
       phrases,
+    renderDay,
     }));
     month = getNextMonth(month);
   }

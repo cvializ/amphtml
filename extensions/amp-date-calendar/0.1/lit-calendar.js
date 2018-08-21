@@ -52,7 +52,8 @@ export const ActiveDateState = {
  *  onHoverChange: function(?Date):undefined,
  *  onKeyboardNavigate: function(!Date):undefined,
  *  onSelectDate: function(?Date):undefined,
- *  phrases: !./phrases.PhrasesDef
+ *  phrases: !./phrases.PhrasesDef,
+ *  renderDay: ?function(!Date):Promise
  * }}
  */
 let LitCalendarPropsDef;
@@ -197,6 +198,7 @@ export class LitCalendar {
       monthTranslate,
       numberOfMonths,
       phrases,
+      renderDay,
     } = props;
 
     const calendar = renderCalendar({
@@ -211,6 +213,7 @@ export class LitCalendar {
       monthTranslate,
       numberOfMonths,
       phrases,
+      renderDay,
     });
     render(calendar, this.element);
 

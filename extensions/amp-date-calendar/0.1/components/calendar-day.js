@@ -20,6 +20,7 @@ import {
   getPhrase,
 } from '../phrases';
 import {html as litHtml} from 'lit-html/lit-html';
+import {until} from 'lit-html/lib/until';
 
 /**
  * @typedef {{
@@ -29,7 +30,8 @@ import {html as litHtml} from 'lit-html/lit-html';
  *  formats: !../calendar-label-formats.CalendarLabelFormats,
  *  modifiers: !Object<string,function(!Date):boolean>,
  *  phrases: !../phrases.PhrasesDef,
- *  value: !Date
+ *  value: !Date,
+ *  renderDay: ?function(!Date):Promise
  * }}
  */
 let CalendarDayPropsDef;
@@ -47,6 +49,7 @@ export function render(props) {
     isOutsideDay,
     modifiers,
     phrases,
+    renderDay,
     value,
   } = props;
 
@@ -70,15 +73,20 @@ export function render(props) {
   const blockedOutOfRange =
       modifiers[CalendarDayStates.BLOCKED_OUT_OF_RANGE](value);
   const focused = modifiers[CalendarDayStates.FOCUSED](value);
-  const formattedDay = formats.day(value);
-  const formattedDate = formats.date(value);
+  const formattedDate = formats.day(value);
+  const formattedFullDate = formats.date(value);
 
   const classAttr = ['i-amphtml-date-calendar-day'].concat(labels).join(' ');
   const ariaLabel = (blocked || blockedMinimumNights || blockedOutOfRange) ?
-    getPhrase(dateIsUnavailable, {date: formattedDate}) :
-    getPhrase(chooseAvailableDate, {date: formattedDate});
+    getPhrase(dateIsUnavailable, {date: formattedFullDate}) :
+    getPhrase(chooseAvailableDate, {date: formattedFullDate});
   const valueAttr = outsideButEnableable ? 0 : Number(value);
   const tabindex = focused && !outsideButEnableable ? '0' : '-1';
+
+  const cellText = outsideButEnableable ? '' : formattedDate;
+  const renderedText = renderDay ?
+    renderDay(value, cellText) :
+    Promise.resolve(cellText);
   return litHtml`
   <td
     style="width: ${daySize}px; height: ${daySize - 1}px"
@@ -89,7 +97,7 @@ export function render(props) {
     data-i-amphtml-date="${valueAttr}"
   >
     <div class="i-amphtml-date-calendar-cell">
-      ${outsideButEnableable ? '' : formattedDay}
+      ${until(renderedText, cellText)}
     </div>
   </td>`;
   // TODO(cvializ): renderDay
