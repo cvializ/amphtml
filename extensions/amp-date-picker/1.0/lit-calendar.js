@@ -24,7 +24,10 @@ import {
 } from './date-utils';
 import {dev} from '../../../src/log';
 import {listen} from '../../../src/event-helper';
-import {render} from 'lit-html/lit-html';
+import {
+  html as litHtml,
+  render,
+} from 'lit-html/lit-html';
 import {render as renderCalendar} from './components/calendar';
 /** @enum {string} */
 export const ActiveDateState = {
@@ -42,6 +45,7 @@ export const ActiveDateState = {
  *  firstDayOfWeek: number,
  *  focusedDate: !Date,
  *  formats: !./calendar-label-formats.LabelFormats,
+ *  isOpen: boolean,
  *  isRtl: boolean,
  *  modifiers: !Object<string,function(!Date):boolean>,
  *  monthTranslate: number,
@@ -193,6 +197,7 @@ export class LitCalendar {
       firstDayOfWeek,
       focusedDate,
       formats,
+      isOpen,
       isRtl,
       modifiers,
       monthTranslate,
@@ -215,7 +220,7 @@ export class LitCalendar {
       phrases,
       renderDay,
     });
-    render(calendar, this.element);
+    render(isOpen ? calendar : litHtml``, this.element);
 
     // Use chunk because the lit-html uses microtasks. Wait 1 microtask.
     // TODO explain better

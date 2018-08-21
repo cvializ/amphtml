@@ -19,6 +19,13 @@ import {ActionTrust} from '../../../src/action-constants';
 import {AmpEvents} from '../../../src/amp-events';
 import {CSS} from '../../../build/amp-date-picker-0.1.css';
 import {DEFAULT_FORMAT, DEFAULT_LOCALE, FORMAT_STRINGS} from './constants';
+import {
+  DateFieldNameByType,
+  DateFieldType,
+} from '../date-field-type';
+import {DatePickerMode} from '../date-picker-mode';
+import {DatePickerState} from '../date-picker-state';
+import {DatePickerType} from '../date-picker-type';
 import {DatesList} from './dates-list';
 import {Deferred} from '../../../src/utils/promise';
 import {FiniteStateMachine} from '../../../src/finite-state-machine';
@@ -42,6 +49,7 @@ import {
 import {map} from '../../../src/utils/object';
 import {once} from '../../../src/utils/function';
 import {requireExternal} from '../../../src/module';
+import {setupDateField} from '../date-picker-mode';
 
 /**
  * @typedef {{
@@ -108,57 +116,6 @@ const attributesToForward = [
   'number-of-months',
   'minimum-nights',
 ];
-
-/** @enum {string} */
-const DatePickerMode = {
-  STATIC: 'static',
-  OVERLAY: 'overlay',
-};
-
-/** @enum {string} */
-const DatePickerState = {
-  OVERLAY_CLOSED: 'overlay-closed',
-  OVERLAY_OPEN_INPUT: 'overlay-open-input',
-  OVERLAY_OPEN_PICKER: 'overlay-open-picker',
-  STATIC: 'static',
-};
-
-/** @enum {string} */
-const DatePickerType = {
-  SINGLE: 'single',
-  RANGE: 'range',
-};
-
-/** @enum {string} */
-const DateFieldType = {
-  DATE: 'input',
-  START_DATE: 'start-input',
-  END_DATE: 'end-input',
-};
-
-const DateFieldNameByType = {
-  [DateFieldType.DATE]: 'date',
-  [DateFieldType.START_DATE]: 'start-date',
-  [DateFieldType.END_DATE]: 'end-date',
-};
-
-/** @enum {string} */
-const DatePickerEvent = {
-  /**
-   * Triggered when the overlay opens or when the static date picker should
-   * receive focus from the attached input.
-   */
-  ACTIVATE: 'activate',
-
-  /**
-   * Triggered when the overlay closes or when the static date picker has
-   * finished selecting.
-   */
-  DEACTIVATE: 'deactivate',
-
-  /** Triggered when the user selects a date range. */
-  SELECT: 'select',
-};
 
 /**
  * The size in PX of each calendar day. This value allows the date picker to
@@ -477,7 +434,8 @@ export class AmpDatePicker extends AMP.BaseElement {
     this.isRTL_ = isRTL(this.win.document);
 
     if (this.type_ === DatePickerType.SINGLE) {
-      this.dateField_ = this.setupDateField_(DateFieldType.DATE);
+      this.dateField_ = setupDateField(
+          this.getAmpDoc(), this.element, this.mode_, DateFieldType.DATE);
       if (this.mode_ == DatePickerMode.OVERLAY &&
           this.dateField_ === null) {
         user().error(TAG,
@@ -485,8 +443,10 @@ export class AmpDatePicker extends AMP.BaseElement {
             'an existing input element.');
       }
     } else if (this.type_ === DatePickerType.RANGE) {
-      this.startDateField_ = this.setupDateField_(DateFieldType.START_DATE);
-      this.endDateField_ = this.setupDateField_(DateFieldType.END_DATE);
+      this.startDateField_ = setupDateField(
+          this.getAmpDoc(), this.element, this.mode_, DateFieldType.START_DATE);
+      this.endDateField_ = setupDateField(
+          this.getAmpDoc(), this.element, this.mode_, DateFieldType.END_DATE);
 
       if (this.mode_ == DatePickerMode.OVERLAY &&
           (!this.startDateField_ || !this.endDateField_)) {
@@ -676,60 +636,6 @@ export class AmpDatePicker extends AMP.BaseElement {
    */
   setState_(newState) {
     return this.render(Object.assign(this.state_, newState));
-  }
-
-  /**
-   * Get the existing input, or create a hidden input for the date field.
-   * @param {!DateFieldType} type The selector for the input field
-   * @return {?Element}
-   */
-  setupDateField_(type) {
-    const fieldSelector = this.element.getAttribute(`${type}-selector`);
-    const existingField = this.getAmpDoc().getRootNode().querySelector(
-        fieldSelector);
-    if (existingField) {
-      return existingField;
-    }
-
-    const form = this.element.closest('form');
-    if (this.mode_ == DatePickerMode.STATIC && form) {
-      const hiddenInput = this.document_.createElement('input');
-      hiddenInput.type = 'hidden';
-      hiddenInput.name = this.getHiddenInputId_(form, type);
-      this.element.appendChild(hiddenInput);
-      return hiddenInput;
-    }
-
-    return null;
-  }
-
-  /**
-   * Generate a name for a hidden input.
-   * Date pickers not in a form don't need named hidden inputs.
-   * @param {!Element} form
-   * @param {!DateFieldType} type
-   * @return {string}
-   * @private
-   */
-  getHiddenInputId_(form, type) {
-    const {id} = this.element;
-    const name = DateFieldNameByType[type];
-    if (!form) {
-      return '';
-    }
-
-    if (!form.elements[name]) {
-      return name;
-    }
-
-    const alternativeName = `${id}-${name}`;
-    if (id && !form.elements[alternativeName]) {
-      return alternativeName;
-    }
-
-    user().error(TAG, `Multiple date-pickers with implicit ${name} fields ` +
-        'need to have IDs');
-    return '';
   }
 
   /**

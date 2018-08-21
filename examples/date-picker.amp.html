@@ -56,9 +56,22 @@
   <script async src="https://cdn.ampproject.org/v0.js"></script>
 </head>
 <body>
-  <button>decoy</button>
-  <amp-date-picker layout="fixed-height" height="360" minimum-nights="2" day-size="39" [day-size]="daySize" type="range" locale="en" first-day-of-week="0" highlighted="2018-07-21" [enable-outside-days]="toggle" number-of-months="2" [number-of-months]="nom">
-  </amp-date-picker>
+  <!-- <button>decoy</button>
+  <amp-date-picker
+    layout="fixed-height"
+    height="360"
+    mode="static"
+    minimum-nights="2"
+    day-size="39"
+    [day-size]="daySize"
+    type="range"
+    locale="en"
+    first-day-of-week="0"
+    highlighted="2018-07-21"
+    [enable-outside-days]="toggle"
+    number-of-months="2"
+    [number-of-months]="nom"
+  ></amp-date-picker>
   <amp-state id="daySize"><script type="application/json">39</script></amp-state>
   <input type="range" min="20" max="50" value="39" on="input-debounced: AMP.setState({daySize: event.value})">
   <span [text]="daySize">39</span>
@@ -67,7 +80,15 @@
   <amp-state id="toggle"><script type="application/json">false</script></amp-state>
   <button on="tap: AMP.setState({toggle: !toggle})">Toggle toggle to <span [text]="toggle ? 'false' : 'true'">true</span></button>
 
-  <amp-date-picker type="range" layout="fixed-height" height="360" number-of-months="2" minimum-nights="5"></amp-date-picker>
+  <amp-date-picker
+      type="range"
+      layout="fixed-height"
+      mode="static"
+      height="360"
+      number-of-months="2"
+      minimum-nights="5"
+  ></amp-date-picker> -->
+
   <h1>amp-date-picker</h1>
   <h2><code>&lt;amp-date-range&gt;</code></h2>
   <p>Try to pick a range. This is a date-range picker</p>
