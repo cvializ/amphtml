@@ -49,16 +49,16 @@
   <script async custom-element="amp-bind" src="https://cdn.ampproject.org/v0/amp-bind-0.1.js"></script>
   <script async custom-element="amp-form" src="https://cdn.ampproject.org/v0/amp-form-0.1.js"></script>
   <script async custom-element="amp-lightbox" src="https://cdn.ampproject.org/v0/amp-lightbox-0.1.js"></script>
-  <script async custom-element="amp-date-picker" src="https://cdn.ampproject.org/v0/amp-date-picker-0.1.js"></script>
-  <script async custom-element="amp-date-parser" src="https://cdn.ampproject.org/v0/amp-date-parser-0.1.js"></script>
-  <script async custom-element="amp-date-calendar" src="https://cdn.ampproject.org/v0/amp-date-calendar-0.1.js"></script>
-  <script async custom-template="amp-mustache" src="https://cdn.ampproject.org/v0/amp-mustache-latest.js"></script>
+  <script async custom-element="amp-date-picker" src="https://cdn.ampproject.org/v0/amp-date-picker-1.0.js"></script>
+  <!-- <script async custom-element="amp-date-parser" src="https://cdn.ampproject.org/v0/amp-date-parser-0.1.js"></script> -->
+  <!-- <script async custom-element="amp-date-calendar" src="https://cdn.ampproject.org/v0/amp-date-calendar-0.1.js"></script> -->
+  <script async custom-template="amp-mustache" src="https://cdn.ampproject.org/v0/amp-mustache-0.2.js"></script>
   <script async src="https://cdn.ampproject.org/v0.js"></script>
 </head>
 <body>
   <button>decoy</button>
-  <amp-date-calendar minimum-nights="2" day-size="39" [day-size]="daySize" type="range" locale="en" first-day-of-week="0" highlighted="2018-07-21" [enable-outside-days]="toggle" number-of-months="2" [number-of-months]="nom">
-  </amp-date-calendar>
+  <amp-date-picker layout="fixed-height" height="360" minimum-nights="2" day-size="39" [day-size]="daySize" type="range" locale="en" first-day-of-week="0" highlighted="2018-07-21" [enable-outside-days]="toggle" number-of-months="2" [number-of-months]="nom">
+  </amp-date-picker>
   <amp-state id="daySize"><script type="application/json">39</script></amp-state>
   <input type="range" min="20" max="50" value="39" on="input-debounced: AMP.setState({daySize: event.value})">
   <span [text]="daySize">39</span>

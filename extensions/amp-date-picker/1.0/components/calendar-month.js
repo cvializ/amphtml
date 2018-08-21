@@ -31,7 +31,7 @@ const DEFAULT_BORDER_SPACING = 0;
  *  daySize: number,
  *  enableOutsideDays: boolean,
  *  firstDayOfWeek: number,
- *  formats: !../calendar-label-formats.CalendarLabelFormats,
+ *  formats: !../calendar-label-formats.LabelFormats,
  *  isRtl: boolean,
  *  modifiers: !Object<string,function(!Date):boolean>,
  *  month: !Date,

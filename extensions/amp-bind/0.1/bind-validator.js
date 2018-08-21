@@ -243,7 +243,7 @@ function createElementRules_() {
         'alternativeName': 'src',
       },
     },
-    'AMP-DATE-CALENDAR': {
+    'AMP-DATE-PICKER': {
       'number-of-months': null,
       'enable-outside-days': null,
       'day-size': null,

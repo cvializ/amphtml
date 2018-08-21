@@ -15,9 +15,9 @@
  */
 
 import {Animation} from '../../../src/animation';
-import {CSS} from '../../../build/amp-date-calendar-0.1.css';
-import {CalendarDayStates} from './calendar-day-states';
-import {CalendarLabelFormats} from './calendar-label-formats';
+import {CSS} from '../../../build/amp-date-picker-1.0.css';
+import {DayStates} from './calendar-day-states';
+import {LabelFormats} from './label-formats';
 import {Layout} from '../../../src/layout';
 import {LitCalendar} from './lit-calendar';
 import {
@@ -45,7 +45,7 @@ import {
 } from '../../../src/dom';
 import {map} from '../../../src/utils/object';
 
-const TAG = 'amp-date-calendar';
+const TAG = 'amp-date-picker';
 
 // TODO(cvializ): Focus areas
 // - Orientation flexibility
@@ -134,8 +134,8 @@ export class AmpDateCalendar extends AMP.BaseElement {
     /** @private {!Array<string>} */
     this.locales_ = ['en-US'];
 
-    /** @private {!CalendarLabelFormats} */
-    this.formats_ = new CalendarLabelFormats(this.locales_);
+    /** @private {!LabelFormats} */
+    this.formats_ = new LabelFormats(this.locales_);
 
     /** @private @const */
     this.modifiers_ = this.createModifiers_();
@@ -223,7 +223,7 @@ export class AmpDateCalendar extends AMP.BaseElement {
     const locale = this.element.getAttribute('locale') || 'en-US';
     this.locales_ = locale.split(/\s+/);
 
-    this.formats_ = new CalendarLabelFormats(this.locales_);
+    this.formats_ = new LabelFormats(this.locales_);
 
     this.enableOutsideDays_ = this.element.hasAttribute('enable-outside-days');
 
@@ -486,24 +486,24 @@ export class AmpDateCalendar extends AMP.BaseElement {
    */
   createModifiers_() {
     return {
-      [CalendarDayStates.AFTER_HOVERED_START]:
+      [DayStates.AFTER_HOVERED_START]:
           date => this.afterHoveredStart_(date),
-      [CalendarDayStates.BLOCKED_CALENDAR]:
+      [DayStates.BLOCKED_CALENDAR]:
           date => this.isBlocked_(date),
-      [CalendarDayStates.BLOCKED_MINIMUM_NIGHTS]:
+      [DayStates.BLOCKED_MINIMUM_NIGHTS]:
           date => this.isBlockedMinimumNights_(date),
-      [CalendarDayStates.BLOCKED_OUT_OF_RANGE]:
+      [DayStates.BLOCKED_OUT_OF_RANGE]:
           date => this.isBlockedOutOfRange_(date),
-      [CalendarDayStates.HIGHLIGHTED_CALENDAR]:
+      [DayStates.HIGHLIGHTED_CALENDAR]:
           date => this.isHighlighted_(date),
-      [CalendarDayStates.HOVERED_SPAN]: date => this.isHoveredSpan_(date),
-      [CalendarDayStates.LAST_IN_RANGE]: date => this.isLastInRange_(date),
-      [CalendarDayStates.SELECTED_END]: date => this.isSelectedEnd_(date),
-      [CalendarDayStates.SELECTED_SPAN]: date => this.isSelectedSpan_(date),
-      [CalendarDayStates.SELECTED_START]: date => this.isSelectedStart_(date),
-      [CalendarDayStates.SELECTED]: date => this.isSelected_(date),
-      [CalendarDayStates.TODAY]: date => isSameDay(date, this.today_),
-      [CalendarDayStates.FOCUSED]: date => isSameDay(date, this.focusedDate_), // TODO(cvializ): needed?
+      [DayStates.HOVERED_SPAN]: date => this.isHoveredSpan_(date),
+      [DayStates.LAST_IN_RANGE]: date => this.isLastInRange_(date),
+      [DayStates.SELECTED_END]: date => this.isSelectedEnd_(date),
+      [DayStates.SELECTED_SPAN]: date => this.isSelectedSpan_(date),
+      [DayStates.SELECTED_START]: date => this.isSelectedStart_(date),
+      [DayStates.SELECTED]: date => this.isSelected_(date),
+      [DayStates.TODAY]: date => isSameDay(date, this.today_),
+      [DayStates.FOCUSED]: date => isSameDay(date, this.focusedDate_),
     };
   }
 
@@ -767,6 +767,6 @@ export class AmpDateCalendar extends AMP.BaseElement {
   }
 }
 
-AMP.extension(TAG, '0.1', AMP => {
+AMP.extension(TAG, '1.0', AMP => {
   AMP.registerElement(TAG, AmpDateCalendar, CSS);
 });

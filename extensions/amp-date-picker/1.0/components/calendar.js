@@ -36,7 +36,7 @@ import {html as litHtml} from 'lit-html/lit-html';
  *  displayedDate: !Date,
  *  enableOutsideDays: boolean,
  *  firstDayOfWeek: number,
- *  formats: !../calendar-label-formats.CalendarLabelFormats,
+ *  formats: !../calendar-label-formats.LabelFormats,
  *  isRtl: boolean,
  *  modifiers: !Object<string,function(!Date):boolean>,
  *  monthTranslate: number,
@@ -85,7 +85,7 @@ export function render(props) {
       month,
       monthTranslate,
       phrases,
-    renderDay,
+      renderDay,
     }));
     month = getNextMonth(month);
   }

@@ -271,19 +271,11 @@ exports.extensionBundles = [
   {name: 'amp-orientation-observer', version: '0.1', type: TYPES.MISC},
   {
     name: 'amp-date-picker',
-    version: '0.1',
+    version: ['0.1', '1.0'],
     options: {hasCss: true},
     type: TYPES.MISC,
   },
   {name: 'amp-date-parser', version: '0.1', type: TYPES.MISC},
-  {
-    name: 'amp-date-calendar',
-    version: '0.1',
-    options: {
-      hasCss: true,
-    },
-    type: TYPES.MISC,
-  },
   {
     name: 'amp-image-viewer',
     version: '0.1',

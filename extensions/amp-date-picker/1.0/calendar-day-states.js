@@ -15,7 +15,7 @@
  */
 
 /** @enum {string} */
-export const CalendarDayStates = {
+export const DayStates = {
   AFTER_HOVERED_START: 'after-hovered-start',
   BLOCKED_CALENDAR: 'blocked-calendar',
   BLOCKED_MINIMUM_NIGHTS: 'blocked-minimum-nights',

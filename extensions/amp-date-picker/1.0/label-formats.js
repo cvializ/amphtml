@@ -17,7 +17,7 @@
 /**
  * Formats calendar labels for a given locale.
  */
-export class CalendarLabelFormats {
+export class LabelFormats {
   /**
    * Construct the Intl formatters
    * @param {Array<string>} locales

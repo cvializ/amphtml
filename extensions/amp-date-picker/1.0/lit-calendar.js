@@ -41,7 +41,7 @@ export const ActiveDateState = {
  *  enableOutsideDays: boolean,
  *  firstDayOfWeek: number,
  *  focusedDate: !Date,
- *  formats: !./calendar-label-formats.CalendarLabelFormats,
+ *  formats: !./calendar-label-formats.LabelFormats,
  *  isRtl: boolean,
  *  modifiers: !Object<string,function(!Date):boolean>,
  *  monthTranslate: number,

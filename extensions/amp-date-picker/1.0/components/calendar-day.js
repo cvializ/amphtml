@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {CalendarDayStates} from '../calendar-day-states';
+import {DayStates} from '../calendar-day-states';
 import {
   Phrases,
   getPhrase,
@@ -27,7 +27,7 @@ import {until} from 'lit-html/lib/until';
  *  daySize: number,
  *  enableOutsideDays: boolean,
  *  isOutsideDay: function(!Date):boolean,
- *  formats: !../calendar-label-formats.CalendarLabelFormats,
+ *  formats: !../calendar-label-formats.LabelFormats,
  *  modifiers: !Object<string,function(!Date):boolean>,
  *  phrases: !../phrases.PhrasesDef,
  *  value: !Date,
@@ -67,12 +67,12 @@ export function render(props) {
     }
   }
 
-  const blocked = modifiers[CalendarDayStates.BLOCKED_CALENDAR](value);
+  const blocked = modifiers[DayStates.BLOCKED_CALENDAR](value);
   const blockedMinimumNights =
-      modifiers[CalendarDayStates.BLOCKED_MINIMUM_NIGHTS](value);
+      modifiers[DayStates.BLOCKED_MINIMUM_NIGHTS](value);
   const blockedOutOfRange =
-      modifiers[CalendarDayStates.BLOCKED_OUT_OF_RANGE](value);
-  const focused = modifiers[CalendarDayStates.FOCUSED](value);
+      modifiers[DayStates.BLOCKED_OUT_OF_RANGE](value);
+  const focused = modifiers[DayStates.FOCUSED](value);
   const formattedDate = formats.day(value);
   const formattedFullDate = formats.date(value);
 
