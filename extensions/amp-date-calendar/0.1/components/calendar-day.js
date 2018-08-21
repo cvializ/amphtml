@@ -84,7 +84,7 @@ export function render(props) {
     tabindex="${tabindex}"
     aria-label="${ariaLabel}"
     data-i-amphtml-date="${valueAttr}"
-  ><div>${outsideButEnableable ? '' : formattedDay}</div></td>`;
+  ><div class="i-amphtml-date-calendar-cell">${outsideButEnableable ? '' : formattedDay}</div></td>`;
   // TODO(cvializ): renderDay
 }
 

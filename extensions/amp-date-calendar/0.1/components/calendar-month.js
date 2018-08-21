@@ -60,14 +60,6 @@ export function render(props) {
 
   const title = formats.month(month);
 
-  const weekdays = [];
-  // for (let i = 0; i < 7; i++) {
-  //   // TODO(cvializ): Remove isRtl if I render the weekdays inside the table
-  //   const formatWeekday = formats.weekday.bind(formats);
-  //   const name = getWeekdayName(i, formatWeekday, firstDayOfWeek/*, isRtl*/);
-  //   weekdays.push(litHtml`<th><small>${name}</small></th>`);
-  // }
-
   const cells =
       generateCalendarCells(month, firstDayOfWeek);
   const c = () => {
@@ -83,7 +75,7 @@ export function render(props) {
       value,
     });
   };
-  const calendarWidth = getCalendarWidth(daySize, DEFAULT_BORDER_SPACING);
+  const calendarWidth = getMonthWidth(daySize, DEFAULT_BORDER_SPACING);
 
   // TODO
   // https://www.w3.org/TR/2018/WD-wai-aria-practices-1.2-20180719/#grid
@@ -91,7 +83,6 @@ export function render(props) {
   <div class="i-amphtml-date-calendar-month" style="width: ${calendarWidth}px">
     <div class="i-amphtml-date-calendar-month-title">${title}</div>
     <table role="grid">
-      <tr class="i-amphtml-date-calendar-weekdays">${weekdays}</tr>
       <tr>${c()}${c()}${c()}${c()}${c()}${c()}${c()}</tr>
       <tr>${c()}${c()}${c()}${c()}${c()}${c()}${c()}</tr>
       <tr>${c()}${c()}${c()}${c()}${c()}${c()}${c()}</tr>
@@ -146,9 +137,10 @@ function generateCalendarCells(date, firstDayOfWeek) {
 /**
  *
  * @param {number} daySize
- * @param {number} borderSpacing
+ * @param {number=} opt_borderSpacing
  * @return {number}
  */
-function getCalendarWidth(daySize, borderSpacing) {
-  return (borderSpacing + daySize) * 7 + borderSpacing;
+export function getMonthWidth(
+  daySize, opt_borderSpacing = DEFAULT_BORDER_SPACING) {
+  return (opt_borderSpacing + daySize) * 7 + opt_borderSpacing;
 }

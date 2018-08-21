@@ -425,6 +425,9 @@ export class AmpDateCalendar extends AMP.BaseElement {
   getPhrases_() {
     const phrases = map(defaultPhrases);
 
+    // TODO(cvializ): Make this change based on the activeDate and where the
+    // day is relative to it, e.g. before the start date, it will say
+    // "choose x as your start date" even if the activeDate is END_DATE.
     phrases[Phrases.CHOOSE_AVAILABLE_DATE] =
       this.type_ == AmpCalendarType.RANGE ?
         (this.activeDate_ == ActiveDateState.START_DATE ?
