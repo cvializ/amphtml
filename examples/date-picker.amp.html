@@ -57,8 +57,11 @@
 </head>
 <body>
   <button>decoy</button>
-  <amp-date-calendar minimum-nights="5" type="range" locale="en" first-day-of-week="0" highlighted="2018-07-21" [enable-outside-days]="toggle" number-of-months="2" [number-of-months]="nom">
+  <amp-date-calendar minimum-nights="2" day-size="39" [day-size]="daySize" type="range" locale="en" first-day-of-week="0" highlighted="2018-07-21" [enable-outside-days]="toggle" number-of-months="2" [number-of-months]="nom">
   </amp-date-calendar>
+  <amp-state id="daySize"><script type="application/json">39</script></amp-state>
+  <input type="range" min="20" max="50" value="39" on="input-debounced: AMP.setState({daySize: event.value})">
+  <span [text]="daySize">39</span>
   <amp-state id="nom"><script type="application/json">2</script></amp-state>
   <button on="tap: AMP.setState({nom: nom+1})">Increment nom to <span [text]="nom + 1">3</span></button>
   <amp-state id="toggle"><script type="application/json">false</script></amp-state>

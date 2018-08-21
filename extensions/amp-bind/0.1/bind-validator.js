@@ -246,6 +246,7 @@ function createElementRules_() {
     'AMP-DATE-CALENDAR': {
       'number-of-months': null,
       'enable-outside-days': null,
+      'day-size': null,
     },
     'AMP-LIST': {
       'src': {

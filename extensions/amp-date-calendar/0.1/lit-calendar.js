@@ -44,6 +44,7 @@ export const ActiveDateState = {
  *  formats: !./calendar-label-formats.CalendarLabelFormats,
  *  isRtl: boolean,
  *  modifiers: !Object<string,function(!Date):boolean>,
+ *  monthTranslate: number,
  *  numberOfMonths: number,
  *  onDisplayedDateChange: function(!Date):undefined,
  *  onGridFocusCaptureChange: function(boolean):undefined,
@@ -193,6 +194,7 @@ export class LitCalendar {
       formats,
       isRtl,
       modifiers,
+      monthTranslate,
       numberOfMonths,
       phrases,
     } = props;
@@ -206,6 +208,7 @@ export class LitCalendar {
       formats,
       isRtl,
       modifiers,
+      monthTranslate,
       numberOfMonths,
       phrases,
     });

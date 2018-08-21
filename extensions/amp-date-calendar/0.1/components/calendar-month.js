@@ -19,7 +19,6 @@ import {
   getDaysInMonth,
   getFirstDayOfMonth,
   getFirstWeekday,
-  getWeekdayName,
 } from '../date-utils';
 
 import {html as litHtml} from 'lit-html/lit-html';
@@ -36,6 +35,7 @@ const DEFAULT_BORDER_SPACING = 0;
  *  isRtl: boolean,
  *  modifiers: !Object<string,function(!Date):boolean>,
  *  month: !Date,
+ *  monthTranslate: number,
  *  phrases: !../phrases.PhrasesDef,
  * }}
  */
@@ -55,6 +55,7 @@ export function render(props) {
     formats,
     modifiers,
     month,
+    monthTranslate,
     phrases,
   } = props;
 
@@ -77,10 +78,17 @@ export function render(props) {
   };
   const calendarWidth = getMonthWidth(daySize, DEFAULT_BORDER_SPACING);
 
-  // TODO
+  const translate = -100 - monthTranslate;
+
   // https://www.w3.org/TR/2018/WD-wai-aria-practices-1.2-20180719/#grid
   const calendarHtml = litHtml`
-  <div class="i-amphtml-date-calendar-month" style="width: ${calendarWidth}px">
+  <div
+    class="i-amphtml-date-calendar-month"
+    style="
+      width: ${calendarWidth}px;
+      transform: translate(${translate}%);
+    "
+  >
     <div class="i-amphtml-date-calendar-month-title">${title}</div>
     <table role="grid">
       <tr>${c()}${c()}${c()}${c()}${c()}${c()}${c()}</tr>

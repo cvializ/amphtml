@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import {Animation} from '../../../src/animation';
 import {CSS} from '../../../build/amp-date-calendar-0.1.css';
 import {CalendarDayStates} from './calendar-day-states';
 import {CalendarLabelFormats} from './calendar-label-formats';
@@ -31,8 +32,6 @@ import {
   addToDate,
   getDay,
   getFirstDayOfMonth,
-  getNextMonth,
-  getPreviousMonth,
   isAfter,
   isAfterInclusive,
   isBetween,
@@ -43,16 +42,14 @@ import {
 import {dev} from '../../../src/log';
 import {
   escapeCssSelectorIdent,
-  scopedQuerySelector,
 } from '../../../src/dom';
-import {listen} from '../../../src/event-helper';
 import {map} from '../../../src/utils/object';
 
 const TAG = 'amp-date-calendar';
 
 // TODO(cvializ): Focus areas
-// - Animation
 // - Orientation flexibility
+// - Overlay, fullscreen
 
 /** @enum {string} */
 const AmpCalendarType = {
@@ -120,7 +117,7 @@ export class AmpDateCalendar extends AMP.BaseElement {
     this.enableOutsideDays_ = false;
 
     /** @private */
-    this.minimumNights_ = 1;
+    this.minimumNights_ = 0;
 
     /** @private */
     this.firstDayOfWeek_ = 0;
@@ -128,11 +125,8 @@ export class AmpDateCalendar extends AMP.BaseElement {
     /** @private */
     this.numberOfMonths_ = 2;
 
-    /** @private {?Element} */
-    this.nextButton_ = null;
-
-    /** @private {?Element} */
-    this.previousButton_ = null;
+    /** @private */
+    this.daySize_ = 39;
 
     /** @private {?Element} */
     this.container_ = null;
@@ -151,6 +145,9 @@ export class AmpDateCalendar extends AMP.BaseElement {
 
     /** @private {!ActiveDateState} */
     this.activeDate_ = ActiveDateState.START_DATE;
+
+    /** @private */
+    this.monthTranslate_ = 0;
 
     /** @private @const */
     this.boundOnDisplayedDateChange_ = this.onDisplayedDateChange_.bind(this);
@@ -229,13 +226,24 @@ export class AmpDateCalendar extends AMP.BaseElement {
     this.enableOutsideDays_ = this.element.hasAttribute('enable-outside-days');
 
     const minimumNights = this.element.getAttribute('minimum-nights');
-    this.minimumNights_ = Number(minimumNights) || 1;
+    if (minimumNights) {
+      this.minimumNights_ = Number(minimumNights);
+    }
 
     const firstDayOfWeek = this.element.getAttribute('first-day-of-week');
-    this.firstDayOfWeek_ = Number(firstDayOfWeek) || 0;
+    if (firstDayOfWeek) {
+      this.firstDayOfWeek_ = Number(firstDayOfWeek);
+    }
 
     const numberOfMonths = this.element.getAttribute('number-of-months');
-    this.numberOfMonths_ = Number(numberOfMonths) || 2;
+    if (numberOfMonths) {
+      this.numberOfMonths_ = Number(numberOfMonths);
+    }
+
+    const daySize = this.element.getAttribute('day-size');
+    if (daySize) {
+      this.daySize_ = Number(daySize);
+    }
 
     this.container_ = this.document_.createElement('div');
 
@@ -257,8 +265,24 @@ export class AmpDateCalendar extends AMP.BaseElement {
    * @param {!Date} date
    */
   onDisplayedDateChange_(date) {
-    this.setDisplayedDate_(date);
-    this.render_();
+    if (this.monthTranslate_ != 0) {
+      return;
+    }
+
+    const direction = isAfter(date, this.displayedDate_) ? 100 : -100;
+    Animation.animate(
+        this.element,
+        d => {
+          this.monthTranslate_ = d * direction;
+          this.render_();
+        },
+        250,
+        'ease-in-out')
+        .thenAlways(() => {
+          this.setDisplayedDate_(date);
+          this.monthTranslate_ = 0;
+          this.render_();
+        });
   }
 
   /**
@@ -337,7 +361,18 @@ export class AmpDateCalendar extends AMP.BaseElement {
         this.activeDate_ = ActiveDateState.END_DATE;
         break;
       case ActiveDateState.END_DATE:
-        if (isAfter(date, this.selectedStartDate_)) {
+        if (!date) {
+          this.selectedEndDate_ = date;
+          break;
+        }
+
+        if (!this.selectedStartDate_) {
+          this.selectedEndDate_ = date;
+          this.activeDate_ = ActiveDateState.START_DATE;
+          break;
+        }
+
+        if (isAfterInclusive(date, this.selectedStartDate_)) {
           this.selectedEndDate_ = date;
         } else {
           this.selectedStartDate_ = date;
@@ -410,6 +445,11 @@ export class AmpDateCalendar extends AMP.BaseElement {
       } else {
         this.element.removeAttribute('enable-outside-days');
       }
+      mutated = true;
+    }
+    if (mutations['day-size'] != null) {
+      this.daySize_ = Number(mutations['day-size']);
+      this.element.setAttribute('day-size', mutations['day-size']);
       mutated = true;
     }
 
@@ -512,12 +552,14 @@ export class AmpDateCalendar extends AMP.BaseElement {
       return false;
     }
 
-    const lastMinimumNight =
-        addToDate(this.selectedStartDate_, 0, 0, this.minimumNights_);
-    const isMinimumNight =
-        isBetween(this.selectedStartDate_, lastMinimumNight, this.hoveredDate_);
-    if (isMinimumNight) {
-      return false;
+    if (this.minimumNights_ > 0) {
+      const lastMinimumNight =
+          addToDate(this.selectedStartDate_, 0, 0, this.minimumNights_);
+      const isMinimumNight = isBetween(
+          this.selectedStartDate_, lastMinimumNight, this.hoveredDate_);
+      if (isMinimumNight) {
+        return false;
+      }
     }
 
     return isBetweenInclusive(
@@ -530,6 +572,10 @@ export class AmpDateCalendar extends AMP.BaseElement {
    * @private
    */
   isLastInRange_(date) {
+    if (!this.selectedEndDate_) {
+      return false;
+    }
+
     return this.isSelectedSpan_(date) &&
         isSameDay(addToDate(date, 0, 0, 1), this.selectedEndDate_);
   }
@@ -557,10 +603,14 @@ export class AmpDateCalendar extends AMP.BaseElement {
       return false;
     }
 
+    if (this.minimumNights_ == 0) {
+      return false;
+    }
+
     const lastMinimumNight =
         addToDate(this.selectedStartDate_, 0, 0, this.minimumNights_);
-
-    return isBetween(this.selectedStartDate_, lastMinimumNight, date);
+    return isSameDay(date, this.selectedStartDate_) ||
+        isBetween(this.selectedStartDate_, lastMinimumNight, date);
   }
 
   /**
@@ -668,7 +718,7 @@ export class AmpDateCalendar extends AMP.BaseElement {
    */
   render_() {
     return this.litCalendar_.render({
-      daySize: 39,
+      daySize: this.daySize_,
       displayedDate: this.displayedDate_,
       enableOutsideDays: this.enableOutsideDays_,
       firstDayOfWeek: this.firstDayOfWeek_,
@@ -677,6 +727,7 @@ export class AmpDateCalendar extends AMP.BaseElement {
       isRtl: this.isRtl_,
       modifiers: this.modifiers_,
       numberOfMonths: this.numberOfMonths_,
+      monthTranslate: this.monthTranslate_,
       onDisplayedDateChange: this.boundOnDisplayedDateChange_,
       onGridFocusCaptureChange: this.boundOnGridFocusCaptureChange_,
       onGridFocusChange: this.boundOnGridFocusChange_,

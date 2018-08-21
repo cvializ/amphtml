@@ -19,6 +19,7 @@ import {
   calendarLabel,
 } from '../phrases';
 import {
+  addToDate,
   getMonth,
   getNextMonth,
   getWeekdayName,
@@ -38,13 +39,12 @@ import {html as litHtml} from 'lit-html/lit-html';
  *  formats: !../calendar-label-formats.CalendarLabelFormats,
  *  isRtl: boolean,
  *  modifiers: !Object<string,function(!Date):boolean>,
+ *  monthTranslate: number,
  *  numberOfMonths: number,
- *  phrases: !../phrases.PhrasesDef,
+ *  phrases: !../phrases.PhrasesDef
  * }}
  */
 let CalendarPropsDef;
-
-const DEFAULT_CALENDAR_PADDING = 8;
 
 /**
  *
@@ -60,6 +60,7 @@ export function render(props) {
     formats,
     isRtl,
     modifiers,
+    monthTranslate,
     numberOfMonths,
     phrases,
   } = props;
@@ -70,8 +71,8 @@ export function render(props) {
   const leftLabel = isRtl ? jumpToNextMonth : jumpToPreviousMonth;
 
   const months = [];
-  let month = getMonth(displayedDate);
-  for (let i = 0; i < numberOfMonths; i++) {
+  let month = getMonth(addToDate(displayedDate, 0, 0, -1));
+  for (let i = -1; i < numberOfMonths + 1; i++) {
     months.push(renderCalendarMonth({
       daySize,
       enableOutsideDays,
@@ -80,11 +81,11 @@ export function render(props) {
       isRtl,
       modifiers,
       month,
+      monthTranslate,
       phrases,
     }));
     month = getNextMonth(month);
   }
-
 
   const weekdays = [];
   for (let i = 0; i < 7; i++) {
@@ -105,20 +106,22 @@ export function render(props) {
     `);
   }
 
-  const monthWidth = getMonthWidth(daySize);
-  const calendarWidth = monthWidth * numberOfMonths +
-      DEFAULT_CALENDAR_PADDING * 2;
+  const monthWidth = getMonthWidth(daySize) + 13 * 2;
+  const calendarWidth = monthWidth * numberOfMonths;
 
   return litHtml`
   <div
     class="i-amphtml-date-calendar-container"
     aria-label=${calendarLabel}
     role="application"
+    style="width: ${calendarWidth}px"
   >
     <div class="i-amphtml-date-calendar-stationary">
       <div class="i-amphtml-date-calendar-header">${header}</div>
     </div>
-    <div class="i-amphtml-date-calendar-months">${months}</div>
+    <div class="i-amphtml-date-calendar-transition">
+      <div class="i-amphtml-date-calendar-months">${months}</div>
+    </div>
     <div class="i-amphtml-date-calendar-navigation">
       <button
         class="i-amphtml-date-calendar-right"

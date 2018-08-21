@@ -15,7 +15,10 @@
  */
 
 import {CalendarDayStates} from '../calendar-day-states';
-import {getPhrase, Phrases} from '../phrases';
+import {
+  Phrases,
+  getPhrase,
+} from '../phrases';
 import {html as litHtml} from 'lit-html/lit-html';
 
 /**
@@ -84,7 +87,11 @@ export function render(props) {
     tabindex="${tabindex}"
     aria-label="${ariaLabel}"
     data-i-amphtml-date="${valueAttr}"
-  ><div class="i-amphtml-date-calendar-cell">${outsideButEnableable ? '' : formattedDay}</div></td>`;
+  >
+    <div class="i-amphtml-date-calendar-cell">
+      ${outsideButEnableable ? '' : formattedDay}
+    </div>
+  </td>`;
   // TODO(cvializ): renderDay
 }
 

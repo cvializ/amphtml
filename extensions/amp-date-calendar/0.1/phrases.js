@@ -20,34 +20,34 @@
  */
 export const Phrases = {
   CALENDAR_LABEL: 'calendar-label',
-  CLOSE_DATE_PICKER: 'close-date-picker',
-  FOCUS_START_DATE: 'focus-start-date',
+  CHOOSE_AVAILABLE_DATE: 'choose-available-date',
+  CHOOSE_AVAILABLE_END_DATE: 'choose-available-end-date',
+  CHOOSE_AVAILABLE_START_DATE: 'choose-available-start-date',
   CLEAR_DATE: 'clear-date',
   CLEAR_DATES: 'clear-dates',
-  JUMP_TO_PREV_MONTH: 'jump-to-prev-month',
-  JUMP_TO_NEXT_MONTH: 'jump-to-next-month',
-  KEYBOARD_SHORTCUTS: 'keyboard-shortcuts',
-  SHOW_KEYBOARD_SHORTCUTS_PANEL: 'show-keyboard-shortcuts-panel',
-  HIDE_KEYBOARD_SHORTCUTS_PANEL: 'hide-keyboard-shortcuts-panel',
-  OPEN_THIS_PANEL: 'open-this-panel',
-  ENTER_KEY: 'enter-key',
-  LEFT_ARROW_RIGHT_ARROW: 'left-arrow-right-arrow',
-  UP_ARROW_DOWN_ARROW: 'up-arrow-down-arrow',
-  PAGE_UP_PAGE_DOWN: 'page-up-page-down',
-  HOME_END: 'home-end',
-  ESCAPE: 'escape',
-  QUESTION_MARK: 'question-mark',
-  SELECT_FOCUSED_DATE: 'select-focused-date',
-  MOVE_FOCUS_BY_ONE_DAY: 'move-focus-by-one-day',
-  MOVE_FOCUS_BY_ONE_WEEK: 'move-focus-by-one-week',
-  MOVE_FOCUS_BY_ONE_MONTH: 'move-focus-by-one-month',
-  MOVE_FOCUS_TO_START_AND_END_OF_WEEK: 'move-focus-to-start-and-end-of-week',
-  RETURN_FOCUS_TO_INPUT: 'return-focus-to-input',
-  KEYBOARD_NAVIGATION_INSTRUCTIONS: 'keyboard-navigation-instructions',
-  CHOOSE_AVAILABLE_START_DATE: 'choose-available-start-date',
-  CHOOSE_AVAILABLE_END_DATE: 'choose-available-end-date',
-  CHOOSE_AVAILABLE_DATE: 'choose-available-date',
+  CLOSE_DATE_PICKER: 'close-date-picker',
   DATE_IS_UNAVAILABLE: 'date-is-unavailable',
+  ENTER_KEY: 'enter-key',
+  ESCAPE: 'escape',
+  FOCUS_START_DATE: 'focus-start-date',
+  HIDE_KEYBOARD_SHORTCUTS_PANEL: 'hide-keyboard-shortcuts-panel',
+  HOME_END: 'home-end',
+  JUMP_TO_NEXT_MONTH: 'jump-to-next-month',
+  JUMP_TO_PREV_MONTH: 'jump-to-prev-month',
+  KEYBOARD_NAVIGATION_INSTRUCTIONS: 'keyboard-navigation-instructions',
+  KEYBOARD_SHORTCUTS: 'keyboard-shortcuts',
+  LEFT_ARROW_RIGHT_ARROW: 'left-arrow-right-arrow',
+  MOVE_FOCUS_BY_ONE_DAY: 'move-focus-by-one-day',
+  MOVE_FOCUS_BY_ONE_MONTH: 'move-focus-by-one-month',
+  MOVE_FOCUS_BY_ONE_WEEK: 'move-focus-by-one-week',
+  MOVE_FOCUS_TO_START_AND_END_OF_WEEK: 'move-focus-to-start-and-end-of-week',
+  OPEN_THIS_PANEL: 'open-this-panel',
+  PAGE_UP_PAGE_DOWN: 'page-up-page-down',
+  QUESTION_MARK: 'question-mark',
+  RETURN_FOCUS_TO_INPUT: 'return-focus-to-input',
+  SELECT_FOCUSED_DATE: 'select-focused-date',
+  SHOW_KEYBOARD_SHORTCUTS_PANEL: 'show-keyboard-shortcuts-panel',
+  UP_ARROW_DOWN_ARROW: 'up-arrow-down-arrow',
 };
 
 /* eslint-disable max-len */ // REVIEW: is this ok?
@@ -84,32 +84,32 @@ export const dateIsUnavailable = 'Not available. %s';
 
 export const defaultPhrases = {
   [Phrases.CALENDAR_LABEL]: calendarLabel,
-  [Phrases.CLOSE_DATE_PICKER]: closeDatePicker,
-  [Phrases.FOCUS_START_DATE]: focusStartDate, // TODO(cvializ): cancel?
+  [Phrases.CHOOSE_AVAILABLE_DATE]: chooseAvailableDate,
   [Phrases.CLEAR_DATE]: clearDate,
   [Phrases.CLEAR_DATES]: clearDates,
-  [Phrases.JUMP_TO_PREV_MONTH]: jumpToPrevMonth,
-  [Phrases.JUMP_TO_NEXT_MONTH]: jumpToNextMonth,
-  [Phrases.KEYBOARD_SHORTCUTS]: keyboardShortcuts,
-  [Phrases.SHOW_KEYBOARD_SHORTCUTS_PANEL]: showKeyboardShortcutsPanel,
-  [Phrases.HIDE_KEYBOARD_SHORTCUTS_PANEL]: hideKeyboardShortcutsPanel,
-  [Phrases.OPEN_THIS_PANEL]: openThisPanel,
-  [Phrases.ENTER_KEY]: enterKey,
-  [Phrases.LEFT_ARROW_RIGHT_ARROW]: leftArrowRightArrow,
-  [Phrases.UP_ARROW_DOWN_ARROW]: upArrowDownArrow,
-  [Phrases.PAGE_UP_PAGE_DOWN]: pageUpPageDown,
-  [Phrases.HOME_END]: homeEnd,
-  [Phrases.ESCAPE]: escape,
-  [Phrases.QUESTION_MARK]: questionMark,
-  [Phrases.SELECT_FOCUSED_DATE]: selectFocusedDate,
-  [Phrases.MOVE_FOCUS_BY_ONE_DAY]: moveFocusByOneDay,
-  [Phrases.MOVE_FOCUS_BY_ONE_WEEK]: moveFocusByOneWeek,
-  [Phrases.MOVE_FOCUS_BY_ONE_MONTH]: moveFocusByOneMonth,
-  [Phrases.MOVE_FOCUS_TO_START_AND_END_OF_WEEK]: moveFocusToStartAndEndOfWeek,
-  [Phrases.RETURN_FOCUS_TO_INPUT]: returnFocusToInput,
-  [Phrases.KEYBOARD_NAVIGATION_INSTRUCTIONS]: keyboardNavigationInstructions,
-  [Phrases.CHOOSE_AVAILABLE_DATE]: chooseAvailableDate,
+  [Phrases.CLOSE_DATE_PICKER]: closeDatePicker,
   [Phrases.DATE_IS_UNAVAILABLE]: dateIsUnavailable,
+  [Phrases.ENTER_KEY]: enterKey,
+  [Phrases.ESCAPE]: escape,
+  [Phrases.FOCUS_START_DATE]: focusStartDate, // TODO(cvializ): cancel?
+  [Phrases.HIDE_KEYBOARD_SHORTCUTS_PANEL]: hideKeyboardShortcutsPanel,
+  [Phrases.HOME_END]: homeEnd,
+  [Phrases.JUMP_TO_NEXT_MONTH]: jumpToNextMonth,
+  [Phrases.JUMP_TO_PREV_MONTH]: jumpToPrevMonth,
+  [Phrases.KEYBOARD_NAVIGATION_INSTRUCTIONS]: keyboardNavigationInstructions,
+  [Phrases.KEYBOARD_SHORTCUTS]: keyboardShortcuts,
+  [Phrases.LEFT_ARROW_RIGHT_ARROW]: leftArrowRightArrow,
+  [Phrases.MOVE_FOCUS_BY_ONE_DAY]: moveFocusByOneDay,
+  [Phrases.MOVE_FOCUS_BY_ONE_MONTH]: moveFocusByOneMonth,
+  [Phrases.MOVE_FOCUS_BY_ONE_WEEK]: moveFocusByOneWeek,
+  [Phrases.MOVE_FOCUS_TO_START_AND_END_OF_WEEK]: moveFocusToStartAndEndOfWeek,
+  [Phrases.OPEN_THIS_PANEL]: openThisPanel,
+  [Phrases.PAGE_UP_PAGE_DOWN]: pageUpPageDown,
+  [Phrases.QUESTION_MARK]: questionMark,
+  [Phrases.RETURN_FOCUS_TO_INPUT]: returnFocusToInput,
+  [Phrases.SELECT_FOCUSED_DATE]: selectFocusedDate,
+  [Phrases.SHOW_KEYBOARD_SHORTCUTS_PANEL]: showKeyboardShortcutsPanel,
+  [Phrases.UP_ARROW_DOWN_ARROW]: upArrowDownArrow,
 };
 
 /**
@@ -126,7 +126,11 @@ const SUBSTITUTE_RE = /%s/g;
  * @return {string}
  */
 export function getPhrase(phrase, opt_args) {
-  return phrase.replace(SUBSTITUTE_RE, (opt_args && opt_args.date));
+  if (opt_args) {
+    return phrase.replace(SUBSTITUTE_RE, opt_args.date);
+  } else {
+    return phrase;
+  }
 }
 
 /** @typedef {!Object<string, string>} */

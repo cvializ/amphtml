@@ -142,6 +142,16 @@ export function px(transition) {
   };
 }
 
+/**
+ * Adds "%" units.
+ * @param {!TransitionDef<number>} transition
+ * @return {!TransitionDef<string>}
+ */
+export function percent(transition) {
+  return time => {
+    return transition(time) + '%';
+  };
+}
 
 /**
  * A transition for "translateX" of CSS "transform" property.

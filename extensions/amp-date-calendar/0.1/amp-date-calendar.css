@@ -73,6 +73,7 @@
 
 
 .i-amphtml-date-calendar-months {
+  width: 2000px;
   font-size: 0; /* fix extra space in inline-block */
 }
 
@@ -83,6 +84,7 @@
   text-align: center;
   padding: 0 13px;
   vertical-align: top;
+  transform: translateX(-100%);
 }
 
 .i-amphtml-date-calendar-month-title {
