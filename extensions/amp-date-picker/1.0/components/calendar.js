@@ -25,11 +25,11 @@ import {
 } from '../date-utils';
 import {
   getMonthWidth,
-  render as renderCalendarMonth,
-} from './calendar-month';
+  render as renderMonth,
+} from './month';
 import {html as litHtml} from 'lit-html/lit-html';
 import {px} from '../../../../src/style';
-import {render as renderCalendarWeekdays} from './calendar-weekdays';
+import {render as renderWeekdays} from './weekdays';
 
 /**
  * @typedef {{
@@ -81,7 +81,7 @@ export function render(props) {
     getMonth(addToDate(displayedDate, 0, 0, -1));
   const end = fullscreen ? numberOfMonths : numberOfMonths + 2;
   for (let i = 0; i < end; i++) {
-    months.push(renderCalendarMonth({
+    months.push(renderMonth({
       daySize,
       enableOutsideDays,
       firstDayOfWeek,
@@ -97,7 +97,7 @@ export function render(props) {
     month = getNextMonth(month);
   }
 
-  const weekdays = renderCalendarWeekdays({
+  const weekdays = renderWeekdays({
     daySize,
     firstDayOfWeek,
     formats,

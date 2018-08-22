@@ -22,8 +22,8 @@ import {
 } from '../date-utils';
 import {html as litHtml} from 'lit-html/lit-html';
 import {px} from '../../../../src/style';
-import {render as renderCalendarDay} from './calendar-day';
-import {render as renderCalendarWeekdays} from './calendar-weekdays';
+import {render as renderCalendarDay} from './day';
+import {render as renderWeekdays} from './weekdays';
 
 const DEFAULT_BORDER_SPACING = 0;
 
@@ -88,7 +88,7 @@ export function render(props) {
 
   let weekdays = '';
   if (fullscreen) {
-    const weekdayCells = renderCalendarWeekdays({
+    const weekdayCells = renderWeekdays({
       daySize: null,
       firstDayOfWeek,
       formats,

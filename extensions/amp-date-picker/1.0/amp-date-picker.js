@@ -56,7 +56,7 @@ import {
 } from '../../../src/dom';
 import {listen} from '../../../src/event-helper';
 import {map} from '../../../src/utils/object';
-import {setupDateField} from './common/date-picker-input';
+import {setupDateField} from './common/input';
 
 const TAG = 'amp-date-picker';
 
