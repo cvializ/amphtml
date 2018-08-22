@@ -21,13 +21,9 @@ import {px} from '../../../../src/style';
 /**
  * @typedef {{
  *  daySize: ?number,
- *  enableOutsideDays: boolean,
- *  isOutsideDay: function(!Date):boolean,
+ *  firstDayOfWeek: number,
  *  formats: !../label-formats.LabelFormats,
- *  modifiers: !Object<string,function(!Date):boolean>,
- *  phrases: !../phrases.PhrasesDef,
- *  value: !Date,
- *  renderDay: ?function(!Date):Promise
+ *  isRtl: boolean,
  * }}
  */
 let CalendarWeekdaysPropsDef;

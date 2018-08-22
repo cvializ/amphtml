@@ -14,8 +14,12 @@
  * limitations under the License.
  */
 
-// import {ActionMixin} from './mixins/action';
+import {ActionTrust} from '../../../src/action-constants';
 import {Animation} from '../../../src/animation';
+import {
+  BindDateDetails,
+  BindDatesDetails,
+} from './common/bindings';
 import {CSS} from '../../../build/amp-date-picker-1.0.css';
 import {DateFieldType} from './common/date-field-type';
 import {DatePickerEvent} from './common/date-picker-event';
@@ -37,7 +41,7 @@ import {
   chooseAvailableStartDate,
   defaultPhrases,
 } from './phrases';
-// import {Services} from '../../../src/services';
+import {Services} from '../../../src/services';
 import {
   addToDate,
   getDay,
@@ -49,24 +53,23 @@ import {
   isSameDay,
   parseIsoDateToLocal,
 } from './date-utils';
+import {
+  createCustomEvent,
+  listen,
+} from '../../../src/event-helper';
 import {dev, user} from '../../../src/log';
 import {
   escapeCssSelectorIdent,
   isRTL,
 } from '../../../src/dom';
-import {listen} from '../../../src/event-helper';
 import {map} from '../../../src/utils/object';
 import {setupDateField} from './common/input';
 
 const TAG = 'amp-date-picker';
 
 // TODO(cvializ): Focus areas
-// - Orientation flexibility
-// - fullscreen
 // - templates, info area
-// - actions
 // - parsing input
-// - mutateElement
 
 const INPUT_FOCUS_CSS = 'amp-date-picker-selecting';
 
@@ -86,6 +89,17 @@ export class AmpDatePicker extends AMP.BaseElement {
 
     /** @private @const */
     this.document_ = this.element.ownerDocument;
+
+    /** @private {?../../../src/service/action-impl.ActionService} */
+    this.action_ = null;
+
+    /** @private @const */
+    this.templates_ = Services.templatesFor(this.win);
+
+    // this.ampDateParser_ = null;
+    // Services.ampDateParserForDocOrNull(this.element).then(adp => {
+    //   this.ampDateParser = adp;
+    // });
 
     /** @private {!Date} */
     this.today_ = getDay(new Date());
@@ -173,6 +187,10 @@ export class AmpDatePicker extends AMP.BaseElement {
     this.keepOpenOnDateSelect_ =
         this.element.hasAttribute('keep-open-on-date-select');
 
+    /** @private */
+    this.reopenPickerOnClearDate_ =
+        this.element.hasAttribute('reopen-picker-on-clear-date');
+
     const minimumNights = this.element.getAttribute('minimum-nights');
     /** @private */
     this.minimumNights_ = minimumNights ? Number(minimumNights) : 0;
@@ -198,11 +216,17 @@ export class AmpDatePicker extends AMP.BaseElement {
     /** @private */
     this.capturedFocus_ = false;
 
-    /** @private {!ActiveDateState} */
-    this.activeDate_ = ActiveDateState.START_DATE;
-
     /** @private */
     this.monthTranslate_ = 0;
+
+    /** @private {?Element} */
+    this.dateField_ = null;
+
+    /** @private {?Element} */
+    this.startDateField_ = null;
+
+    /** @private {?Element} */
+    this.endDateField_ = null;
 
     /** @private @const */
     this.boundOnDisplayedDateChange_ = this.onDisplayedDateChange_.bind(this);
@@ -222,10 +246,6 @@ export class AmpDatePicker extends AMP.BaseElement {
 
     /** @private {?LitCalendar} */
     this.litCalendar_ = null;
-    // this.ampDateParser_ = null;
-    // Services.ampDateParserForDocOrNull(this.element).then(adp => {
-    //   this.ampDateParser = adp;
-    // });
 
     const initialState = (this.mode_ == DatePickerMode.OVERLAY ?
       DatePickerState.OVERLAY_CLOSED :
@@ -237,7 +257,9 @@ export class AmpDatePicker extends AMP.BaseElement {
 
   /** @override */
   buildCallback() {
-    this.isRTL_ = isRTL(this.win.document);
+    this.action_ = Services.actionServiceForDoc(this.element);
+
+    this.isRtl_ = isRTL(this.win.document);
 
     this.focusedDate_ = this.getFocusedDate_();
 
@@ -274,6 +296,133 @@ export class AmpDatePicker extends AMP.BaseElement {
     this.render_();
 
     this.element.appendChild(this.container_);
+
+    this.registerAction('setDate',
+        invocation => this.handleSetDateFromString_(invocation.args['date']));
+    this.registerAction('setDates',
+        invocation => this.handleSetDatesFromString_(
+            invocation.args['startDate'],
+            invocation.args['endDate']));
+    this.registerAction('clear', () => this.handleClear_());
+    this.registerAction('today',
+        this.todayAction_.bind(this, d => this.handleSetDate_(d)));
+    this.registerAction('startToday',
+        this.todayAction_.bind(this, d => this.handleSetDates_(d, null)));
+    this.registerAction('endToday',
+        this.todayAction_.bind(this, d => this.handleSetDates_(null, d)));
+  }
+
+
+  /**
+   * Trigger an action that consumes the current day plus an offset
+   * @param {function(!Date)} cb
+   * @param {!../../../src/service/action-impl.ActionInvocation} invocation
+   */
+  todayAction_(cb, invocation) {
+    const offset = invocation.args && invocation.args['offset'];
+    cb(offset ? addToDate(this.today_, 0, 0, Number(offset)) : this.today_);
+  }
+
+  /**
+   * Set the date via a string.
+   * @param {string} date
+   */
+  handleSetDateFromString_(date) {
+    const parsed = parseIsoDateToLocal(date); // TODO(cvializ): parsing
+    return this.handleSetDate_(parsed);
+  }
+
+  /**
+   * Set the date via a Date object.
+   * @param {?Date} date
+   */
+  handleSetDate_(date) {
+    this.selectedDate_ = date;
+    if (!this.isVisibleDate_(date)) {
+      // We need to render some new months
+      const newDisplayedDate = getFirstDayOfMonth(date);
+      this.setDisplayedDate_(newDisplayedDate, date);
+    }
+
+    this.updateDateField_(this.dateField_, date);
+    const formattedDate = date ? this.formats_.date(date) : '';
+    this.element.setAttribute('date', formattedDate);
+    this.render_();
+    this.triggerEvent_(DatePickerEvent.SELECT, this.getSelectData_(date));
+  }
+
+  /**
+   *
+   * @param {?string} startDate
+   * @param {?string} endDate
+   */
+  handleSetDatesFromString_(startDate, endDate) {
+    const start = startDate ? parseIsoDateToLocal(startDate) : null;
+    const end = endDate ? parseIsoDateToLocal(endDate) : null;
+    this.handleSetDates_(start, end);
+  }
+
+  /**
+   * Set one, both, or neither date via AMP action.
+   * @param {?Date} startDate
+   * @param {?Date} endDate
+   */
+  handleSetDates_(startDate, endDate) {
+    if (startDate) {
+      this.selectedStartDate_ = startDate;
+      const formattedDate = startDate ? this.formats_.date(startDate) : '';
+      this.element.setAttribute(
+          'start-date', formattedDate);
+      this.updateDateField_(this.startDateField_, startDate);
+    }
+    if (endDate) {
+      this.selectedEndDate_ = endDate;
+      const formattedDate = endDate ? this.formats_.date(endDate) : '';
+      this.element.setAttribute('end-date', formattedDate);
+      this.updateDateField_(this.endDateField_, endDate);
+    }
+
+    const oneOf = startDate || endDate;
+    if (oneOf) {
+      if (!this.isVisibleDate_(oneOf)) {
+        // We need to render some new months
+        const newDisplayedDate = getFirstDayOfMonth(oneOf);
+        this.setDisplayedDate_(newDisplayedDate, oneOf);
+      }
+      this.render_();
+    }
+
+    if (startDate && endDate) {
+      const selectData = this.getSelectData_(startDate, endDate);
+      this.triggerEvent_(DatePickerEvent.SELECT, selectData);
+    }
+  }
+
+  /**
+   * Clear the values from the input fields and
+   * trigger events with the empty values.
+   */
+  handleClear_() {
+    this.clearDateField_(this.dateField_);
+    this.clearDateField_(this.startDateField_);
+    this.clearDateField_(this.endDateField_);
+    this.element.removeAttribute('date');
+    this.element.removeAttribute('start-date');
+    this.element.removeAttribute('end-date');
+
+    this.selectedDate_ = this.selectedStartDate_ = this.selectedEndDate_ = null;
+
+    if (this.type_ == DatePickerType.RANGE) {
+      this.activeDate_ = ActiveDateState.START_DATE;
+    }
+    this.triggerEvent_(DatePickerEvent.SELECT, null);
+
+    if (this.reopenPickerOnClearDate_) {
+      this.updateDateFieldFocus_(this.startDateField_, true);
+      this.triggerEvent_(DatePickerEvent.ACTIVATE);
+      this.transitionTo_(DatePickerState.OVERLAY_OPEN_INPUT);
+    }
+    this.render_();
   }
 
   /** @override */
@@ -351,6 +500,69 @@ export class AmpDatePicker extends AMP.BaseElement {
   }
 
   /**
+   * Trigger the activate AMP action. Triggered when the overlay opens or when
+   * the static date picker should receive focus from the attached input.
+   * @param {string} name
+   * @param {?BindDatesDetails|?BindDateDetails=} opt_data
+   * @private
+   */
+  triggerEvent_(name, opt_data = null) {
+    const event = createCustomEvent(this.win, `${TAG}.${name}`, opt_data);
+    this.action_.trigger(this.element, name, event, ActionTrust.HIGH);
+  }
+
+  /**
+   * Create the response for the 'select' AMP event.
+   * @param {?Date} dateOrStartDate
+   * @param {?Date=} endDate
+   * @return {?BindDatesDetails|?BindDateDetails}
+   * @private
+   */
+  getSelectData_(dateOrStartDate, endDate = null) {
+    if (this.type_ == DatePickerType.SINGLE) {
+      return this.getBindDate_(dateOrStartDate);
+    } else if (this.type_ == DatePickerType.RANGE) {
+      return dateOrStartDate ?
+        this.getBindDates_(dateOrStartDate, endDate) : null;
+    } else {
+      dev().error(TAG, 'Invalid date picker type');
+      return null;
+    }
+  }
+
+  /**
+   * Create a date object to be consumed by AMP actions and events or amp-bind.
+   * @param {?Date} date
+   * @return {?BindDateDetails}
+   * @private
+   */
+  getBindDate_(date) {
+    if (!date) {
+      return null;
+    }
+    // const template = this.getDayTemplate_(date);
+    const formattedDate = date ? this.formats_.date(date) : '';
+    const details = new BindDateDetails(formattedDate, null);
+    return details;
+  }
+
+  /**
+   * Create an array for date objects to be consumed by AMP actions and events
+   * or amp-bind.
+   * @param {!Date} start
+   * @param {?Date} end
+   * @return {!BindDatesDetails}
+   * @private
+   */
+  getBindDates_(start, end) {
+    const dates = [];
+    for (let date = start; date < end; date = addToDate(date, 0, 0, 1)) {
+      dates.push(this.getBindDate_(date));
+    }
+    return new BindDatesDetails(dates);
+  }
+
+  /**
    * Handle clicks inside and outside of the date picker to detect when to
    * open and close the date picker.
    * @param {!Event} e
@@ -373,6 +585,12 @@ export class AmpDatePicker extends AMP.BaseElement {
    * @private
    */
   handleFocus_(e) {
+    if (e.target.tagName == 'BUTTON') {
+      return;
+    }
+    if (Number(e.target.dataset['iAmphtmlDate']) == Number(this.focusedDate_)) {
+      return;
+    }
     this.maybeTransitionWithFocusChange_(dev().assertElement(e.target));
   }
 
@@ -453,6 +671,12 @@ export class AmpDatePicker extends AMP.BaseElement {
    */
   onDisplayedDateChange_(date) {
     if (this.monthTranslate_ != 0) {
+      return;
+    }
+
+    if (this.fullscreen_) {
+      this.setDisplayedDate_(date);
+      this.render_();
       return;
     }
 
@@ -597,11 +821,15 @@ export class AmpDatePicker extends AMP.BaseElement {
    * Perform actions that happen when the date field changes.
    */
   dateChanged_() {
-    // this.triggerEvent_(DatePickerEvent.SELECT, this.getSelectData_(date));
+    this.triggerEvent_(
+        DatePickerEvent.SELECT, this.getSelectData_(this.selectedDate_));
     this.updateDateField_(this.dateField_, this.selectedDate_);
-    this.element.setAttribute('date', this.formats_.date(this.selectedDate_));
+    const formattedDate = this.selectedDate_ ?
+      this.formats_.date(this.selectedDate_) :
+      '';
+    this.element.setAttribute('date', formattedDate);
 
-    if (!this.keepOpenOnDateSelect) {
+    if (!this.keepOpenOnDateSelect_) {
       this.transitionTo_(DatePickerState.OVERLAY_CLOSED);
     }
   }
@@ -613,27 +841,38 @@ export class AmpDatePicker extends AMP.BaseElement {
     const isFinalSelection = (!this.keepOpenOnDateSelect_ &&
         this.activeDate_ != ActiveDateState.END_DATE);
 
-    // TODO(cvializ): Actions
-    // const selectData = this.getSelectData_(startDate, endDate);
-    // this.triggerEvent_(DatePickerEvent.SELECT, selectData);
-    // this.setState_({
-    //   startDate,
-    //   endDate,
-    //   isFocused: this.mode_ == DatePickerMode.STATIC || !isFinalSelection,
-    // });
+    const selectData =
+        this.getSelectData_(this.selectedStartDate_, this.selectedEndDate_);
+    this.triggerEvent_(DatePickerEvent.SELECT, selectData);
 
     this.updateDateField_(this.startDateField_, this.selectedStartDate_);
-    this.element.setAttribute('start-date',
-        this.formats_.date(this.selectedStartDate_));
+    const formattedStartDate = this.selectedStartDate_ ?
+      this.formats_.date(this.selectedStartDate_) :
+      '';
+    this.element.setAttribute('start-date', formattedStartDate);
     this.updateDateField_(this.endDateField_, this.selectedEndDate_);
-    this.element.setAttribute('end-date',
-        this.formats_.date(this.selectedEndDate_));
+
+    const formattedEndDate = this.selectedEndDate_ ?
+      this.formats_.date(this.selectedEndDate_) :
+      '';
+    this.element.setAttribute('end-date', formattedEndDate);
 
     if (isFinalSelection &&
         this.selectedStartDate_ &&
         this.selectedEndDate_) {
       this.transitionTo_(DatePickerState.OVERLAY_CLOSED);
       this.triggerEvent_(DatePickerEvent.DEACTIVATE);
+    }
+  }
+
+  /**
+   * Clear the value from the given input field.
+   * @param {?Element} field An input field
+   * @private
+   */
+  clearDateField_(field) {
+    if (field) {
+      field.value = '';
     }
   }
 
@@ -654,6 +893,7 @@ export class AmpDatePicker extends AMP.BaseElement {
       return;
     }
 
+    // TODO(cvializ): For now use YYYY-MM-DD for both
     const year = date.getFullYear();
     const month = date.toLocaleString('en-US', {month: '2-digit'});
     const day = date.toLocaleString('en-US', {day: '2-digit'});
@@ -685,7 +925,7 @@ export class AmpDatePicker extends AMP.BaseElement {
     if (!destinationElement) {
       return false;
     } else {
-      destinationElement.focus(); // TODO(cvializ): mutateElement
+      this.mutateElement(() => destinationElement.focus());
       return true;
     }
   }
@@ -998,7 +1238,7 @@ export class AmpDatePicker extends AMP.BaseElement {
   }
 
   /**
-   * @param {Date} date
+   * @param {!Date} date
    * @return {!Promise}
    */
   renderDay_(date) {
@@ -1012,27 +1252,29 @@ export class AmpDatePicker extends AMP.BaseElement {
    * @private
    */
   render_() {
-    return this.litCalendar_.render({
-      daySize: this.daySize_,
-      displayedDate: this.displayedDate_,
-      enableOutsideDays: this.enableOutsideDays_,
-      firstDayOfWeek: this.firstDayOfWeek_,
-      focusedDate: this.focusedDate_,
-      formats: this.formats_,
-      fullscreen: this.fullscreen_,
-      isOpen: this.isOpen_,
-      isRtl: this.isRtl_,
-      modifiers: this.modifiers_,
-      numberOfMonths: this.numberOfMonths_,
-      monthTranslate: this.monthTranslate_,
-      onDisplayedDateChange: this.boundOnDisplayedDateChange_,
-      onGridFocusCaptureChange: this.boundOnGridFocusCaptureChange_,
-      onGridFocusChange: this.boundOnGridFocusChange_,
-      onHoverChange: this.boundOnHoverChange_,
-      onKeyboardNavigate: this.boundOnKeyboardNavigate_,
-      onSelectDate: this.boundOnSelectDate_,
-      phrases: this.getPhrases_(), // TODO(cvializ): does this need to be more efficient?
-      renderDay: null, // this.boundRenderDay_,
+    return this.mutateElement(() => {
+      return this.litCalendar_.render({
+        daySize: this.daySize_,
+        displayedDate: this.displayedDate_,
+        enableOutsideDays: this.enableOutsideDays_,
+        firstDayOfWeek: this.firstDayOfWeek_,
+        focusedDate: this.focusedDate_,
+        formats: this.formats_,
+        fullscreen: this.fullscreen_,
+        isOpen: this.isOpen_,
+        isRtl: this.isRtl_,
+        modifiers: this.modifiers_,
+        numberOfMonths: this.numberOfMonths_,
+        monthTranslate: this.monthTranslate_,
+        onDisplayedDateChange: this.boundOnDisplayedDateChange_,
+        onGridFocusCaptureChange: this.boundOnGridFocusCaptureChange_,
+        onGridFocusChange: this.boundOnGridFocusChange_,
+        onHoverChange: this.boundOnHoverChange_,
+        onKeyboardNavigate: this.boundOnKeyboardNavigate_,
+        onSelectDate: this.boundOnSelectDate_,
+        phrases: this.getPhrases_(), // TODO(cvializ): does this need to be more efficient?
+        renderDay: null, // this.boundRenderDay_,
+      });
     });
   }
 

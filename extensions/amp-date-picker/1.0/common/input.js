@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-import {DateFieldNameByType} from './date-picker-type';
+import {DateFieldNameByType} from './date-field-type';
 import {DatePickerMode} from './date-picker-mode';
 import {user} from '../../../../src/log';
 
 /**
  * Get the existing input, or create and append a hidden input for the
  * date field.
- * @param {!AmpDoc} ampdoc Ampdoc to search for inputs
+ * @param {!../../../../src/service/ampdoc-impl.AmpDoc} ampdoc Ampdoc to search for inputs
  * @param {!Element} element
- * @param {!DatePickerMode} mode
- * @param {!DatePickerType} type The selector for the input field
+ * @param {string} mode
+ * @param {string} type The selector for the input field
  * @return {?Element}
  */
 export function setupDateField(ampdoc, element, mode, type) {
@@ -36,7 +36,7 @@ export function setupDateField(ampdoc, element, mode, type) {
   }
 
   const form = element.closest('form');
-  if (mode.mode_ == DatePickerMode.STATIC && form) {
+  if (mode == DatePickerMode.STATIC && form) {
     const hiddenInput = element.ownerDocument.createElement('input');
     hiddenInput.type = 'hidden';
     hiddenInput.name = getHiddenInputId(element, form, type);
@@ -52,7 +52,7 @@ export function setupDateField(ampdoc, element, mode, type) {
  * Date pickers not in a form don't need named hidden inputs.
  * @param {!Element} element
  * @param {!Element} form
- * @param {!DateFieldType} type
+ * @param {string} type
  * @return {string}
  * @private
  */

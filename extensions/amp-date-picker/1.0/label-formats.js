@@ -14,26 +14,32 @@
  * limitations under the License.
  */
 
+import {dict} from '../../../src/utils/object';
+
 /**
  * Formats calendar labels for a given locale.
  */
 export class LabelFormats {
   /**
    * Construct the Intl formatters
-   * @param {Array<string>} locales
+   * @param {!Array<string>} locales
    */
   constructor(locales) {
-    /** @const */
+    /*** @private @const */
     this.month_ = new Intl.DateTimeFormat(locales,
         {month: 'long', year: 'numeric'});
 
-    /** @const */
+    /** @private @const */
     this.day_ = new Intl.DateTimeFormat(locales, {day: 'numeric'});
+    /** @private @const {!Object<string, string>} */
+    this.dayMemo_ = dict();
 
-    /** @const */
+    /*** @private @const */
     this.weekday_ = new Intl.DateTimeFormat(locales, {weekday: 'narrow'});
+    /** @private @const {!Object<string, string>} */
+    this.weekdayMemo_ = dict();
 
-    /** @const */
+    /*** @private @const */
     this.date_ = new Intl.DateTimeFormat(locales,
         {weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'});
   }
@@ -50,22 +56,30 @@ export class LabelFormats {
 
   /**
    * Convert a Date to a string representing its day in the format's locale.
-   * Example: new Date(2018-01-01) -> "1"
+   * Example: new Date(2018-01-02) -> "2"
+   * Cache the formatted days because it's an easy win, and it's expensive
+   * for the browser to repeatedly execute this.
    * @param {!Date} date
    * @return {string}
    */
   day(date) {
-    return this.day_.format(date);
+    const key = String(date.getDate());
+    const cached = this.dayMemo_[key];
+    return cached || (this.dayMemo_[key] = this.day_.format(date));
   }
 
   /**
    * Convert a Date to a string representing its weekday in the given locale.
    * Example: new Date(2018-01-01) -> "T"
+   * Cache the formatted days because it's an easy win, and it's expensive
+   * for the browser to repeatedly execute this.
    * @param {!Date} date
    * @return {string}
    */
   weekday(date) {
-    return this.weekday_.format(date);
+    const key = String(date.getDay());
+    const cached = this.weekdayMemo_[key];
+    return cached || (this.weekdayMemo_[key] = this.weekday_.format(date));
   }
 
   /**

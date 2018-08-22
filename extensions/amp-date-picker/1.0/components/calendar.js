@@ -118,32 +118,39 @@ export function render(props) {
   }
 
   const monthWidth = getMonthWidth(daySize) + 13 * 2;
-  const calendarWidth = fullscreen ? 'auto' : monthWidth * numberOfMonths;
-  const boundaryWidth = fullscreen ? 'auto' : px(2000 + calendarWidth);
+  let calendarWidth;
+  let boundaryWidth;
+  if (fullscreen) {
+    calendarWidth = boundaryWidth = 'auto';
+  } else {
+    const calendarWidthNumeric = monthWidth * numberOfMonths;
+    calendarWidth = px(calendarWidthNumeric);
+    boundaryWidth = px(2000 + Number(calendarWidthNumeric));
+  }
 
+  // TODO(cvializ): Better way to minify?
   return litHtml`
   <div
     class="i-amphtml-date-calendar-container"
     aria-label=${calendarLabel}
     role="application"
-    style="width: ${px(calendarWidth)}"
+    style="width: ${calendarWidth}"
   >
     <div class="i-amphtml-date-calendar-stationary">${header}</div>
+    <button
+      class="i-amphtml-date-calendar-left"
+      aria-label=${leftLabel}
+    ></button>
     <div class="i-amphtml-date-calendar-transition">
       <div
         class="i-amphtml-date-calendar-months"
         style="width: ${boundaryWidth}"
       >${months}</div>
     </div>
-    <div class="i-amphtml-date-calendar-navigation">
-      <button
-        class="i-amphtml-date-calendar-right"
-        aria-label=${rightLabel}
-      ></button>
-      <button
-        class="i-amphtml-date-calendar-left"
-        aria-label=${leftLabel}
-      ></button>
+    <button
+      class="i-amphtml-date-calendar-right"
+      aria-label=${rightLabel}
+    ></button>
     </div>
   </div>
   `;

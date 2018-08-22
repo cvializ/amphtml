@@ -17,7 +17,7 @@
 import '../../../third_party/react-dates/bundle';
 import {ActionTrust} from '../../../src/action-constants';
 import {AmpEvents} from '../../../src/amp-events';
-import {BindDateDetails, BindDatesDetails} from './common/date-picker-bindings';
+import {BindDateDetails, BindDatesDetails} from './common/bindings';
 import {CSS} from '../../../build/amp-date-picker-0.1.css';
 import {DEFAULT_FORMAT, DEFAULT_LOCALE, FORMAT_STRINGS} from './constants';
 import {DateFieldType} from './common/date-field-type';
@@ -48,7 +48,7 @@ import {
 import {map} from '../../../src/utils/object';
 import {once} from '../../../src/utils/function';
 import {requireExternal} from '../../../src/module';
-import {setupDateField} from './common/date-picker-input';
+import {setupDateField} from './common/input';
 
 /**
  * @typedef {{

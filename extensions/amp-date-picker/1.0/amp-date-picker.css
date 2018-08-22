@@ -22,7 +22,6 @@ amp-date-picker[mode="overlay"] .i-amphtml-date-calendar-container {
 }
 
 amp-date-picker[fullscreen] .i-amphtml-date-calendar-container {
-  padding-top: 20px;
   height: 100%;
   position: absolute;
   top: 0;
@@ -144,9 +143,9 @@ amp-date-picker table * {
   border: 1px solid #e4e7e7;
 }
 
-.blocked-minimum-nights.i-amphtml-date-calendar-day,
-.blocked-calendar.i-amphtml-date-calendar-day,
-.blocked-out-of-range.i-amphtml-date-calendar-day {
+.i-amphtml-date-calendar-day.blocked-minimum-nights,
+.i-amphtml-date-calendar-day.blocked-calendar,
+.i-amphtml-date-calendar-day.blocked-out-of-range {
   cursor: default;
 }
 
@@ -156,8 +155,6 @@ amp-date-picker table * {
 }
 
 .i-amphtml-date-calendar-day.selected-span,
-.i-amphtml-date-calendar-day.hovered-span,
-.i-amphtml-date-calendar-day.hovered-span:active,
 .i-amphtml-date-calendar-day.hovered-span {
   background-color: #9bbbdd;
   border: 1px solid #9bbbdd;
@@ -178,7 +175,6 @@ amp-date-picker:not([allow-blocked-ranges]) .i-amphtml-date-calendar-day.blocked
 .i-amphtml-date-calendar-day.selected,
 .i-amphtml-date-calendar-day.selected-start,
 .i-amphtml-date-calendar-day.selected-end,
-.i-amphtml-date-calendar-day.selected:active,
 .i-amphtml-date-calendar-day.selected:hover {
   background-color: #0654ab;
   border: 1px solid #0654ab;
@@ -187,7 +183,6 @@ amp-date-picker:not([allow-blocked-ranges]) .i-amphtml-date-calendar-day.blocked
 
 
 .i-amphtml-date-calendar-day.blocked-out-of-range,
-.i-amphtml-date-calendar-day.blocked-out-of-range:active,
 .i-amphtml-date-calendar-day.blocked-out-of-range:hover {
   color: rgb(0, 0, 0, .1);
   border: 1px solid transparent;
@@ -220,8 +215,8 @@ amp-date-picker:not([allow-blocked-ranges]) .i-amphtml-date-calendar-day.blocked
   pointer-events: none;
 }
 
-.i-amphtml-date-calendar-left,
-.i-amphtml-date-calendar-right {
+.i-amphtml-date-calendar-right,
+.i-amphtml-date-calendar-left {
   border: 0;
   background-color: transparent;
   background-repeat: no-repeat;
@@ -236,14 +231,37 @@ amp-date-picker:not([allow-blocked-ranges]) .i-amphtml-date-calendar-day.blocked
   position: absolute;
 
   cursor: pointer;
+  z-index: 1;
+  background-image: url('data:image/svg+xml;charset=utf-8,<svg width="16" height="25" xmlns="http://www.w3.org/2000/svg"><path fill="#fff" d="M.3 3l9.5 9.5L.3 22l3 3 12.4-12.5L3.2 0"/></svg>');
 }
 
 .i-amphtml-date-calendar-right {
-  background-image: url('data:image/svg+xml;charset=utf-8,<svg width="16" height="25" xmlns="http://www.w3.org/2000/svg"><path fill="#fff" d="M.3 3l9.5 9.5L.3 22l3 3 12.4-12.5L3.2 0"/></svg>');
   right: 22px;
 }
 
 .i-amphtml-date-calendar-left {
-  background-image: url('data:image/svg+xml;charset=utf-8,<svg width="16" height="25" xmlns="http://www.w3.org/2000/svg"><path fill="#fff" d="M15.7 22l-9.5-9.5L15.7 3l-3-3L.4 12.6 12.8 25"/></svg>');
+  transform: rotateZ(180deg);
   left: 22px;
+}
+
+amp-date-picker[fullscreen] .i-amphtml-date-calendar-right,
+amp-date-picker[fullscreen] .i-amphtml-date-calendar-left {
+  background-image: none;
+  position: static;
+  width: 100%;
+  height: 44px;
+}
+amp-date-picker[fullscreen] .i-amphtml-date-calendar-right::before,
+amp-date-picker[fullscreen] .i-amphtml-date-calendar-left::before {
+  content: '';
+  display: block;
+  width: 30px;
+  height: 26px;
+  margin: auto;
+  background-color: transparent;
+  background-repeat: no-repeat;
+  background-position: 55% 50%;
+
+  background-image: url('data:image/svg+xml;charset=utf-8,<svg width="16" height="25" xmlns="http://www.w3.org/2000/svg"><path fill="#000" d="M.3 3l9.5 9.5L.3 22l3 3 12.4-12.5L3.2 0"/></svg>');
+  transform: rotateZ(90deg);
 }

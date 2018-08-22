@@ -87,35 +87,7 @@ export class LitCalendar {
    */
   listen() {
     listen(this.element, 'click', e => {
-      const {target} = e;
-      const {
-        displayedDate,
-        isRtl,
-        onDisplayedDateChange,
-        onSelectDate,
-      } = this.getProps_();
-
-      const dateString = target.dataset['iAmphtmlDate'];
-      if (dateString) {
-        onSelectDate(new Date(Number(dateString)));
-        return;
-      }
-
-      if (target.classList.contains('i-amphtml-date-calendar-right')) {
-        const month = isRtl ?
-          getPreviousMonth(displayedDate) :
-          getNextMonth(displayedDate);
-        onDisplayedDateChange(month);
-        return;
-      }
-
-      if (target.classList.contains('i-amphtml-date-calendar-left')) {
-        const month = isRtl ?
-          getNextMonth(displayedDate) :
-          getPreviousMonth(displayedDate);
-        onDisplayedDateChange(month);
-        return;
-      }
+      this.handleClick_(dev().assertElement(e.target));
     });
 
     listen(this.element, 'mouseover', e => {
@@ -164,19 +136,57 @@ export class LitCalendar {
         focusedDate,
         onKeyboardNavigate,
       } = this.props_;
-      const {key, shiftKey} = e;
-      const maybeDestinationDay =
-          getKeyboardNavigationDate(focusedDate, key, shiftKey);
+      const {key, shiftKey, target} = e;
 
-      if (maybeDestinationDay) {
+      if (target && (key == ' ' || key == 'Enter')) {
         e.preventDefault();
+        this.handleClick_(dev().assertElement(target));
+        return;
       }
 
-      onKeyboardNavigate(/** @type {!Date} */ (maybeDestinationDay));
+      const maybeDestinationDay =
+          getKeyboardNavigationDate(focusedDate, key, shiftKey);
+      if (maybeDestinationDay) {
+        e.preventDefault();
+        onKeyboardNavigate(/** @type {!Date} */ (maybeDestinationDay));
+        return;
+      }
     });
   }
 
+  /**
+   * @param {!Element} target
+   */
+  handleClick_(target) {
+    const {
+      displayedDate,
+      isRtl,
+      onDisplayedDateChange,
+      onSelectDate,
+    } = this.getProps_();
 
+    const dateString = target.dataset['iAmphtmlDate'];
+    if (dateString) {
+      onSelectDate(new Date(Number(dateString)));
+      return;
+    }
+
+    if (target.classList.contains('i-amphtml-date-calendar-right')) {
+      const month = isRtl ?
+        getPreviousMonth(displayedDate) :
+        getNextMonth(displayedDate);
+      onDisplayedDateChange(month);
+      return;
+    }
+
+    if (target.classList.contains('i-amphtml-date-calendar-left')) {
+      const month = isRtl ?
+        getNextMonth(displayedDate) :
+        getPreviousMonth(displayedDate);
+      onDisplayedDateChange(month);
+      return;
+    }
+  }
 
   /**
    * @return {!LitCalendarPropsDef}

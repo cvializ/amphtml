@@ -86,7 +86,7 @@ export function render(props) {
 
   const cellText = outsideButEnableable ? '' : formattedDate;
   const renderedText = renderDay ?
-    renderDay(value, cellText) :
+    renderDay(value) : // renderDay(value, cellText) :
     Promise.resolve(cellText);
   return litHtml`
   <td

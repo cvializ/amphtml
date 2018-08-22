@@ -82,15 +82,26 @@
   <button on="tap: AMP.setState({toggle: !toggle})">Toggle toggle to <span [text]="toggle ? 'false' : 'true'">true</span></button>
   -->
 
+  <amp-state id="date"><script type="application/json">null</script></amp-state>
+
   <amp-date-picker
-      type="range"
-      layout="fixed-height"
-      mode="static"
-      height="360"
-      number-of-months="2"
-      minimum-nights="5"
-      blocked="2018-08-25"
-      allow-blocked-ranges
+    on="select: AMP.setState({date: event.date})"
+    layout="fixed-height"
+    mode="static"
+    height="360"
+    number-of-months="1"
+    blocked="2018-08-25"
+  ></amp-date-picker>
+  <span [text]="date.getMilliseconds()">null</span>
+
+  <amp-date-picker
+    type="range"
+    layout="fixed-height"
+    mode="static"
+    height="360"
+    number-of-months="2"
+    minimum-nights="5"
+    blocked="2018-08-25"
   ></amp-date-picker>
 
   <h1>amp-date-picker</h1>
@@ -209,11 +220,10 @@
             <input type="text" name="name" id="name3" required>
         </label>
         <span>Your date</span>
-        <input id="date" name="date">
+        <!-- <input id="date" name="date"> -->
         <amp-date-picker
           layout="fixed-height"
           height="360"
-          input-selector="#date"
         ></amp-date-picker>
         <input type="submit" value="Subscribe">
     </fieldset>
@@ -281,7 +291,7 @@
 <button on="tap: trp.startToday">Start Today</button>
 <button on="tap: trp.endToday(offset=1)">End Tomorrow</button>
 <button on="tap: trp.startToday,trp.endToday(offset=7)">Select one week</button>
-<button on="tap: trp.startToday(offset=7),trp.endToday(offset=14)">Select next week</button>
+<button on="tap: trp.endToday(offset=14), trp.startToday(offset=7)">Select next week</button>
 <button on="tap: trp.clear">Clear</button>
 <amp-date-picker id="trp" type="range" layout="fixed-height" height="360"></amp-date-picker>
 
