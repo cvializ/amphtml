@@ -16,7 +16,7 @@
 
 import {DateFieldNameByType} from './date-picker-type';
 import {DatePickerMode} from './date-picker-mode';
-import {user} from '../../src/log';
+import {user} from '../../../../src/log';
 
 /**
  * Get the existing input, or create and append a hidden input for the
@@ -72,7 +72,7 @@ function getHiddenInputId(element, form, type) {
     return alternativeName;
   }
 
-  user().error('amp-date-picker', `Multiple date-pickers with implicit ${name} fields ` +
-      'need to have IDs');
+  user().error('amp-date-picker',
+      `Multiple date-pickers with implicit ${name} fields 'need to have IDs`);
   return '';
 }

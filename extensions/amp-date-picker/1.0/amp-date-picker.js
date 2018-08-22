@@ -14,17 +14,15 @@
  * limitations under the License.
  */
 
+// import {ActionMixin} from './mixins/action';
 import {Animation} from '../../../src/animation';
 import {CSS} from '../../../build/amp-date-picker-1.0.css';
-import {
-  DateFieldNameByType,
-  DateFieldType,
-} from '../date-field-type';
-import {DatePickerEvent} from '../date-picker-event';
-import {DatePickerMode} from '../date-picker-mode';
-import {DatePickerState} from '../date-picker-state';
-import {DatePickerType} from '../date-picker-type';
-import {DayStates} from './calendar-day-states';
+import {DateFieldType} from './common/date-field-type';
+import {DatePickerEvent} from './common/date-picker-event';
+import {DatePickerMode} from './common/date-picker-mode';
+import {DatePickerState} from './common/date-picker-state';
+import {DatePickerType} from './common/date-picker-type';
+import {DayStates} from './day-states';
 import {FiniteStateMachine} from '../../../src/finite-state-machine';
 import {LabelFormats} from './label-formats';
 import {
@@ -51,14 +49,14 @@ import {
   isSameDay,
   parseIsoDateToLocal,
 } from './date-utils';
-import {createCustomEvent, listen} from '../../../src/event-helper';
 import {dev, user} from '../../../src/log';
 import {
   escapeCssSelectorIdent,
   isRTL,
 } from '../../../src/dom';
+import {listen} from '../../../src/event-helper';
 import {map} from '../../../src/utils/object';
-import {setupDateField} from '../date-picker-input';
+import {setupDateField} from './common/date-picker-input';
 
 const TAG = 'amp-date-picker';
 
@@ -75,7 +73,7 @@ const ActiveDateState = {
 };
 
 /* TODO(cvializ): This is a temporary name. It will be amp-date-picker 0.2? */
-export class AmpDateCalendar extends AMP.BaseElement {
+export class AmpDatePicker extends AMP.BaseElement {
   /** @param {!AmpElement} element */
   constructor(element) {
     super(element);
@@ -125,48 +123,57 @@ export class AmpDateCalendar extends AMP.BaseElement {
     this.focusedDate_ = this.today_;
 
     const min = this.element.getAttribute('min');
+    /** @private {?Date} */
     this.min_ = min ? parseIsoDateToLocal(min) : null;
 
     const max = this.element.getAttribute('max');
+    /** @private {?Date} */
     this.max_ = max ? parseIsoDateToLocal(max) : null;
 
     const blocked = this.element.getAttribute('blocked');
+    /** @private {Array<!Date>} */
     this.blocked_ = blocked ?
       blocked.split(/\s+/).map(v => parseIsoDateToLocal(v)) :
       [];
 
     const highlighted = this.element.getAttribute('highlighted');
+    /** @private {Array<!Date>} */
     this.highlighted_ = highlighted ?
       highlighted.split(/\s+/).map(v => parseIsoDateToLocal(v)) :
       [];
 
     const locale = this.element.getAttribute('locale');
+    /** @private {Array<string>} */
     this.locales_ = locale ? locale.split(/\s+/) : ['en-US'];
 
+    /** @private */
     this.formats_ = new LabelFormats(this.locales_);
 
+    /** @private */
     this.enableOutsideDays_ = this.element.hasAttribute('enable-outside-days');
 
+    /** @private */
+    this.allowBlockedRanges_ =
+        this.element.hasAttribute('allow-blocked-ranges');
+
     const minimumNights = this.element.getAttribute('minimum-nights');
+    /** @private */
     this.minimumNights_ = minimumNights ? Number(minimumNights) : 0;
 
     const firstDayOfWeek = this.element.getAttribute('first-day-of-week');
+    /** @private */
     this.firstDayOfWeek_ = firstDayOfWeek ? Number(firstDayOfWeek) : 0;
 
     const numberOfMonths = this.element.getAttribute('number-of-months');
+    /** @private */
     this.numberOfMonths_ = numberOfMonths ? Number(numberOfMonths) : 2;
 
     const daySize = this.element.getAttribute('day-size');
+    /** @private */
     this.daySize_ = daySize ? Number(daySize) : 39;
 
     /** @private {?Element} */
     this.container_ = null;
-
-    /** @private {!Array<string>} */
-    this.locales_ = ['en-US'];
-
-    /** @private {!LabelFormats} */
-    this.formats_ = new LabelFormats(this.locales_);
 
     /** @private @const */
     this.modifiers_ = this.createModifiers_();
@@ -514,7 +521,10 @@ export class AmpDateCalendar extends AMP.BaseElement {
         }
 
         if (isAfterInclusive(date, this.selectedStartDate_)) {
-          this.selectedEndDate_ = date;
+          if (this.canSelectRange_(
+              this.selectedStartDate_, date)) {
+            this.selectedEndDate_ = date;
+          }
         } else {
           this.selectedStartDate_ = date;
           this.selectedEndDate_ = null;
@@ -838,6 +848,24 @@ export class AmpDateCalendar extends AMP.BaseElement {
   }
 
   /**
+   * @param {!Date} start
+   * @param {!Date} end
+   * @return {boolean}
+   * @private
+   */
+  canSelectRange_(start, end) {
+    for (let date = start; date < end; date = addToDate(date, 0, 0, 1)) {
+      if (this.isBlocked_(date) && !this.allowBlockedRanges_) {
+        return false;
+      }
+      if (this.isBlockedOutOfRange_(date)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
    * Gets the date to focus;
    * @return {!Date}
    * @private
@@ -910,5 +938,5 @@ export class AmpDateCalendar extends AMP.BaseElement {
 }
 
 AMP.extension(TAG, '1.0', AMP => {
-  AMP.registerElement(TAG, AmpDateCalendar, CSS);
+  AMP.registerElement(TAG, AmpDatePicker, CSS);
 });

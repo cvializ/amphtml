@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {DayStates} from '../calendar-day-states';
+import {DayStates} from '../day-states';
 import {
   Phrases,
   getPhrase,
@@ -27,7 +27,7 @@ import {until} from 'lit-html/lib/until';
  *  daySize: number,
  *  enableOutsideDays: boolean,
  *  isOutsideDay: function(!Date):boolean,
- *  formats: !../calendar-label-formats.LabelFormats,
+ *  formats: !../label-formats.LabelFormats,
  *  modifiers: !Object<string,function(!Date):boolean>,
  *  phrases: !../phrases.PhrasesDef,
  *  value: !Date,

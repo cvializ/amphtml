@@ -14,6 +14,12 @@
  * limitations under the License.
  */
 
+amp-date-picker[mode="overlay"] .i-amphtml-date-calendar-container {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 10px;
+  z-index: 10;
+}
 
 .i-amphtml-date-calendar-container {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
@@ -124,7 +130,7 @@ amp-date-picker table * {
 }
 
 .i-amphtml-date-calendar-day.blocked-minimum-nights {
-  color: #cacccd;
+  color: #82888a;
 
 }
 
@@ -141,6 +147,11 @@ amp-date-picker table * {
 .i-amphtml-date-calendar-day.blocked-calendar {
   border: 1px solid #cacccd;
   background-color: #cacccd;
+}
+
+amp-date-picker:not([allow-blocked-ranges]) .i-amphtml-date-calendar-day.blocked-calendar.hovered-span {
+  background-color: #ff8080;
+  border: 1px solid #ff8080;
 }
 
 .i-amphtml-date-calendar-day.selected,

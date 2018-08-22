@@ -36,7 +36,7 @@ import {html as litHtml} from 'lit-html/lit-html';
  *  displayedDate: !Date,
  *  enableOutsideDays: boolean,
  *  firstDayOfWeek: number,
- *  formats: !../calendar-label-formats.LabelFormats,
+ *  formats: !../label-formats.LabelFormats,
  *  isRtl: boolean,
  *  modifiers: !Object<string,function(!Date):boolean>,
  *  monthTranslate: number,

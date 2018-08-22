@@ -17,15 +17,14 @@
 import '../../../third_party/react-dates/bundle';
 import {ActionTrust} from '../../../src/action-constants';
 import {AmpEvents} from '../../../src/amp-events';
+import {BindDateDetails, BindDatesDetails} from '../1.0/common/date-picker-bindings';
 import {CSS} from '../../../build/amp-date-picker-0.1.css';
 import {DEFAULT_FORMAT, DEFAULT_LOCALE, FORMAT_STRINGS} from './constants';
-import {
-  DateFieldNameByType,
-  DateFieldType,
-} from '../date-field-type';
-import {DatePickerMode} from '../date-picker-mode';
-import {DatePickerState} from '../date-picker-state';
-import {DatePickerType} from '../date-picker-type';
+import {DateFieldType} from '../1.0/common/date-field-type';
+import {DatePickerEvent} from '../1.0/common/date-picker-event';
+import {DatePickerMode} from '../1.0/common/date-picker-mode';
+import {DatePickerState} from '../1.0/common/date-picker-state';
+import {DatePickerType} from '../1.0/common/date-picker-type';
 import {DatesList} from './dates-list';
 import {Deferred} from '../../../src/utils/promise';
 import {FiniteStateMachine} from '../../../src/finite-state-machine';
@@ -49,7 +48,7 @@ import {
 import {map} from '../../../src/utils/object';
 import {once} from '../../../src/utils/function';
 import {requireExternal} from '../../../src/module';
-import {setupDateField} from '../date-picker-mode';
+import {setupDateField} from '../1.0/common/date-picker-input';
 
 /**
  * @typedef {{
@@ -74,37 +73,6 @@ let DatesChangeDetailsDef;
  */
 let DateChangeDetailsDef;
 
-/** @dict @extends {JsonObject} */
-class BindDateDetails {
-  /**
-   * @param {string} date
-   * @param {?string} id
-   */
-  constructor(date, id) {
-    /** @const */
-    this['date'] = date;
-
-    /** @const */
-    this['id'] = id;
-  }
-}
-
-/** @dict @extends {JsonObject} */
-class BindDatesDetails {
-  /**
-   * @param {!Array<!BindDateDetails>} dates
-   */
-  constructor(dates) {
-    /** @const */
-    this['dates'] = dates;
-
-    /** @const */
-    this['start'] = dates[0];
-
-    /** @const */
-    this['end'] = dates[dates.length - 1];
-  }
-}
 
 const TAG = 'amp-date-picker';
 const DATE_SEPARATOR = ' ';
