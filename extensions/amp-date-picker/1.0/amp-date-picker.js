@@ -62,7 +62,13 @@ const TAG = 'amp-date-picker';
 
 // TODO(cvializ): Focus areas
 // - Orientation flexibility
-// - Overlay, fullscreen
+// - fullscreen
+// - templates, info area
+// - actions
+// - parsing input
+// - mutateElement
+
+const INPUT_FOCUS_CSS = 'amp-date-picker-selecting';
 
 /** @enum {string} */
 const ActiveDateState = {
@@ -156,6 +162,17 @@ export class AmpDatePicker extends AMP.BaseElement {
     this.allowBlockedRanges_ =
         this.element.hasAttribute('allow-blocked-ranges');
 
+    /** @private @const */
+    this.fullscreen_ = this.element.hasAttribute('fullscreen');
+    if (this.fullscreen_) {
+      user().assert(this.mode_ == DatePickerMode.STATIC,
+          'amp-date-picker mode must be "static" to use fullscreen attribute');
+    }
+
+    /** @private */
+    this.keepOpenOnDateSelect_ =
+        this.element.hasAttribute('keep-open-on-date-select');
+
     const minimumNights = this.element.getAttribute('minimum-nights');
     /** @private */
     this.minimumNights_ = minimumNights ? Number(minimumNights) : 0;
@@ -166,7 +183,7 @@ export class AmpDatePicker extends AMP.BaseElement {
 
     const numberOfMonths = this.element.getAttribute('number-of-months');
     /** @private */
-    this.numberOfMonths_ = numberOfMonths ? Number(numberOfMonths) : 2;
+    this.numberOfMonths_ = numberOfMonths ? Number(numberOfMonths) : 1;
 
     const daySize = this.element.getAttribute('day-size');
     /** @private */
@@ -406,6 +423,28 @@ export class AmpDatePicker extends AMP.BaseElement {
    * @private
    */
   updateDateFieldFocus_(focusedField, opt_toggle) {
+    if (this.mode_ == DatePickerMode.STATIC) {
+      return;
+    }
+
+    const toggle = typeof opt_toggle != 'undefined' ? opt_toggle : true;
+    this.toggleDateFieldClass_(this.startDateField_, INPUT_FOCUS_CSS, false);
+    this.toggleDateFieldClass_(this.endDateField_, INPUT_FOCUS_CSS, false);
+    this.toggleDateFieldClass_(this.dateField_, INPUT_FOCUS_CSS, false);
+    this.toggleDateFieldClass_(focusedField, INPUT_FOCUS_CSS, toggle);
+  }
+
+  /**
+   * Toggle the provided class on the given input
+   * @param {?Element} field An input field
+   * @param {string} className A css classname
+   * @param {boolean=} value
+   * @private
+   */
+  toggleDateFieldClass_(field, className, value) {
+    if (field) {
+      this.mutateElement(() => field.classList.toggle(className, value), field);
+    }
   }
 
   /**
@@ -502,21 +541,27 @@ export class AmpDatePicker extends AMP.BaseElement {
     switch (this.activeDate_) {
       case ActiveDateState.DATE:
         this.selectedDate_ = date;
+        this.dateChanged_();
         // Remain in the single date DATE state
         break;
       case ActiveDateState.START_DATE:
         this.selectedStartDate_ = date;
         this.activeDate_ = ActiveDateState.END_DATE;
+        this.updateDateFieldFocus_(this.endDateField_);
+        this.datesChanged_();
         break;
       case ActiveDateState.END_DATE:
         if (!date) {
           this.selectedEndDate_ = date;
+          this.datesChanged_();
           break;
         }
 
         if (!this.selectedStartDate_) {
           this.selectedEndDate_ = date;
           this.activeDate_ = ActiveDateState.START_DATE;
+          this.updateDateFieldFocus_(this.startDateField_);
+          this.datesChanged_();
           break;
         }
 
@@ -529,6 +574,7 @@ export class AmpDatePicker extends AMP.BaseElement {
           this.selectedStartDate_ = date;
           this.selectedEndDate_ = null;
         }
+        this.datesChanged_();
         // Remain in END_DATE state.
         break;
       case ActiveDateState.NONE:
@@ -545,6 +591,75 @@ export class AmpDatePicker extends AMP.BaseElement {
     }
 
     this.render_(); // TODO(cvializ): Optimize
+  }
+
+  /**
+   * Perform actions that happen when the date field changes.
+   */
+  dateChanged_() {
+    // this.triggerEvent_(DatePickerEvent.SELECT, this.getSelectData_(date));
+    this.updateDateField_(this.dateField_, this.selectedDate_);
+    this.element.setAttribute('date', this.formats_.date(this.selectedDate_));
+
+    if (!this.keepOpenOnDateSelect) {
+      this.transitionTo_(DatePickerState.OVERLAY_CLOSED);
+    }
+  }
+
+  /**
+   * Perform actions that happen when the date fields change.
+   */
+  datesChanged_() {
+    const isFinalSelection = (!this.keepOpenOnDateSelect_ &&
+        this.activeDate_ != ActiveDateState.END_DATE);
+
+    // TODO(cvializ): Actions
+    // const selectData = this.getSelectData_(startDate, endDate);
+    // this.triggerEvent_(DatePickerEvent.SELECT, selectData);
+    // this.setState_({
+    //   startDate,
+    //   endDate,
+    //   isFocused: this.mode_ == DatePickerMode.STATIC || !isFinalSelection,
+    // });
+
+    this.updateDateField_(this.startDateField_, this.selectedStartDate_);
+    this.element.setAttribute('start-date',
+        this.formats_.date(this.selectedStartDate_));
+    this.updateDateField_(this.endDateField_, this.selectedEndDate_);
+    this.element.setAttribute('end-date',
+        this.formats_.date(this.selectedEndDate_));
+
+    if (isFinalSelection &&
+        this.selectedStartDate_ &&
+        this.selectedEndDate_) {
+      this.transitionTo_(DatePickerState.OVERLAY_CLOSED);
+      this.triggerEvent_(DatePickerEvent.DEACTIVATE);
+    }
+  }
+
+  /**
+   * Assign the provided date value to the given input.
+   * input[type="date"] expects YYYY-MM-DD for setting its value,
+   * so it is special-cased here.
+   * @param {?Element} field An input field
+   * @param {?Date} date A date value
+   * @private
+   */
+  updateDateField_(field, date) {
+    if (!field) {
+      return;
+    }
+    if (!date) {
+      field.value = '';
+      return;
+    }
+
+    const year = date.getFullYear();
+    const month = date.toLocaleString('en-US', {month: '2-digit'});
+    const day = date.toLocaleString('en-US', {day: '2-digit'});
+    field.value = (field.type == 'date' ?
+      `${year}-${month}-${day}` :
+      `${year}-${month}-${day}`);
   }
 
   /**
@@ -904,6 +1019,7 @@ export class AmpDatePicker extends AMP.BaseElement {
       firstDayOfWeek: this.firstDayOfWeek_,
       focusedDate: this.focusedDate_,
       formats: this.formats_,
+      fullscreen: this.fullscreen_,
       isOpen: this.isOpen_,
       isRtl: this.isRtl_,
       modifiers: this.modifiers_,

@@ -20,9 +20,10 @@ import {
   getFirstDayOfMonth,
   getFirstWeekday,
 } from '../date-utils';
-
 import {html as litHtml} from 'lit-html/lit-html';
+import {px} from '../../../../src/style';
 import {render as renderCalendarDay} from './calendar-day';
+import {render as renderCalendarWeekdays} from './calendar-weekdays';
 
 const DEFAULT_BORDER_SPACING = 0;
 
@@ -32,6 +33,7 @@ const DEFAULT_BORDER_SPACING = 0;
  *  enableOutsideDays: boolean,
  *  firstDayOfWeek: number,
  *  formats: !../label-formats.LabelFormats,
+ *  fullscreen: boolean,
  *  isRtl: boolean,
  *  modifiers: !Object<string,function(!Date):boolean>,
  *  month: !Date,
@@ -54,6 +56,7 @@ export function render(props) {
     enableOutsideDays,
     firstDayOfWeek,
     formats,
+    fullscreen,
     modifiers,
     month,
     monthTranslate,
@@ -79,21 +82,35 @@ export function render(props) {
       value,
     });
   };
-  const calendarWidth = getMonthWidth(daySize, DEFAULT_BORDER_SPACING);
 
-  const translate = -100 - monthTranslate;
+  const calendarWidth = getMonthWidth(daySize, DEFAULT_BORDER_SPACING);
+  const translate = fullscreen ? 0 : -100 - monthTranslate;
+
+  let weekdays = '';
+  if (fullscreen) {
+    const weekdayCells = renderCalendarWeekdays({
+      daySize: null,
+      firstDayOfWeek,
+      formats,
+      isRtl: false, // not needed for rendering in th cells
+    });
+    weekdays = litHtml`
+    <tr>${weekdayCells.map(weekday => litHtml`<th>${weekday}</th>`)}</tr>
+    `;
+  }
 
   // https://www.w3.org/TR/2018/WD-wai-aria-practices-1.2-20180719/#grid
   const calendarHtml = litHtml`
   <div
     class="i-amphtml-date-calendar-month"
     style="
-      width: ${calendarWidth}px;
+      width: ${px(calendarWidth)};
       transform: translate(${translate}%);
     "
   >
     <div class="i-amphtml-date-calendar-month-title">${title}</div>
     <table role="grid">
+      ${weekdays}
       <tr>${c()}${c()}${c()}${c()}${c()}${c()}${c()}</tr>
       <tr>${c()}${c()}${c()}${c()}${c()}${c()}${c()}</tr>
       <tr>${c()}${c()}${c()}${c()}${c()}${c()}${c()}</tr>

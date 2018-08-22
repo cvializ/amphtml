@@ -21,6 +21,18 @@ amp-date-picker[mode="overlay"] .i-amphtml-date-calendar-container {
   z-index: 10;
 }
 
+amp-date-picker[fullscreen] .i-amphtml-date-calendar-container {
+  padding-top: 20px;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  left: 0;
+  overflow-y: scroll;
+  background: #fff;
+}
+
 .i-amphtml-date-calendar-container {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
   background-color: #fdfdfd;
@@ -77,10 +89,15 @@ amp-date-picker[mode="overlay"] .i-amphtml-date-calendar-container {
   pointer-events: none;
 }
 
-
 .i-amphtml-date-calendar-months {
   width: 2000px;
   font-size: 0; /* fix extra space in inline-block */
+}
+
+amp-date-picker[fullscreen] .i-amphtml-date-calendar-months {
+  display: flex;
+  flex-flow: column;
+  align-items: center;
 }
 
 .i-amphtml-date-calendar-month {
@@ -101,6 +118,10 @@ amp-date-picker[mode="overlay"] .i-amphtml-date-calendar-container {
   padding: 22px 0 20px;
   background-color: #000;
   color: #fff;
+}
+
+amp-date-picker[fullscreen] .i-amphtml-date-calendar-month-title  {
+  margin: 10px -10px;
 }
 
 amp-date-picker table {

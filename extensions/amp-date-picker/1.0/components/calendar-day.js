@@ -20,6 +20,7 @@ import {
   getPhrase,
 } from '../phrases';
 import {html as litHtml} from 'lit-html/lit-html';
+import {px} from '../../../../src/style';
 import {until} from 'lit-html/lib/until';
 
 /**
@@ -89,7 +90,7 @@ export function render(props) {
     Promise.resolve(cellText);
   return litHtml`
   <td
-    style="width: ${daySize}px; height: ${daySize - 1}px"
+    style="width: ${px(daySize)}; height: ${px(daySize - 1)}"
     class="${classAttr}"
     role="button"
     tabindex="${tabindex}"
@@ -100,7 +101,6 @@ export function render(props) {
       ${until(renderedText, cellText)}
     </div>
   </td>`;
-  // TODO(cvializ): renderDay
 }
 
 /**

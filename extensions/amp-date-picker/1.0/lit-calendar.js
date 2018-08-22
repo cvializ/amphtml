@@ -45,6 +45,7 @@ export const ActiveDateState = {
  *  firstDayOfWeek: number,
  *  focusedDate: !Date,
  *  formats: !./label-formats.LabelFormats,
+ *  fullscreen: boolean,
  *  isOpen: boolean,
  *  isRtl: boolean,
  *  modifiers: !Object<string,function(!Date):boolean>,
@@ -197,6 +198,7 @@ export class LitCalendar {
       firstDayOfWeek,
       focusedDate,
       formats,
+      fullscreen,
       isOpen,
       isRtl,
       modifiers,
@@ -213,6 +215,7 @@ export class LitCalendar {
       firstDayOfWeek,
       focusedDate,
       formats,
+      fullscreen,
       isRtl,
       modifiers,
       monthTranslate,
@@ -225,6 +228,7 @@ export class LitCalendar {
     // Use chunk because the lit-html uses microtasks. Wait 1 microtask.
     // TODO explain better
     // TODO is a deferred needed or is any microtask enough?
+    // REVIEW: jridgewell?
     const deferred = new Deferred();
     this.win.requestAnimationFrame(deferred.resolve);
     return deferred.promise;

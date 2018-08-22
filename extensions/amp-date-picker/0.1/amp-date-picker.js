@@ -17,14 +17,14 @@
 import '../../../third_party/react-dates/bundle';
 import {ActionTrust} from '../../../src/action-constants';
 import {AmpEvents} from '../../../src/amp-events';
-import {BindDateDetails, BindDatesDetails} from '../1.0/common/date-picker-bindings';
+import {BindDateDetails, BindDatesDetails} from './common/date-picker-bindings';
 import {CSS} from '../../../build/amp-date-picker-0.1.css';
 import {DEFAULT_FORMAT, DEFAULT_LOCALE, FORMAT_STRINGS} from './constants';
-import {DateFieldType} from '../1.0/common/date-field-type';
-import {DatePickerEvent} from '../1.0/common/date-picker-event';
-import {DatePickerMode} from '../1.0/common/date-picker-mode';
-import {DatePickerState} from '../1.0/common/date-picker-state';
-import {DatePickerType} from '../1.0/common/date-picker-type';
+import {DateFieldType} from './common/date-field-type';
+import {DatePickerEvent} from './common/date-picker-event';
+import {DatePickerMode} from './common/date-picker-mode';
+import {DatePickerState} from './common/date-picker-state';
+import {DatePickerType} from './common/date-picker-type';
 import {DatesList} from './dates-list';
 import {Deferred} from '../../../src/utils/promise';
 import {FiniteStateMachine} from '../../../src/finite-state-machine';
@@ -48,7 +48,7 @@ import {
 import {map} from '../../../src/utils/object';
 import {once} from '../../../src/utils/function';
 import {requireExternal} from '../../../src/module';
-import {setupDateField} from '../1.0/common/date-picker-input';
+import {setupDateField} from './common/date-picker-input';
 
 /**
  * @typedef {{

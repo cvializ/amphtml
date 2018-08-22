@@ -22,13 +22,14 @@ import {
   addToDate,
   getMonth,
   getNextMonth,
-  getWeekdayName,
 } from '../date-utils';
 import {
   getMonthWidth,
   render as renderCalendarMonth,
 } from './calendar-month';
 import {html as litHtml} from 'lit-html/lit-html';
+import {px} from '../../../../src/style';
+import {render as renderCalendarWeekdays} from './calendar-weekdays';
 
 /**
  * @typedef {{
@@ -37,6 +38,7 @@ import {html as litHtml} from 'lit-html/lit-html';
  *  enableOutsideDays: boolean,
  *  firstDayOfWeek: number,
  *  formats: !../label-formats.LabelFormats,
+ *  fullscreen: boolean,
  *  isRtl: boolean,
  *  modifiers: !Object<string,function(!Date):boolean>,
  *  monthTranslate: number,
@@ -59,6 +61,7 @@ export function render(props) {
     enableOutsideDays,
     firstDayOfWeek,
     formats,
+    fullscreen,
     isRtl,
     modifiers,
     monthTranslate,
@@ -73,13 +76,17 @@ export function render(props) {
   const leftLabel = isRtl ? jumpToNextMonth : jumpToPreviousMonth;
 
   const months = [];
-  let month = getMonth(addToDate(displayedDate, 0, 0, -1));
-  for (let i = -1; i < numberOfMonths + 1; i++) {
+  let month = fullscreen ?
+    displayedDate :
+    getMonth(addToDate(displayedDate, 0, 0, -1));
+  const end = fullscreen ? numberOfMonths : numberOfMonths + 2;
+  for (let i = 0; i < end; i++) {
     months.push(renderCalendarMonth({
       daySize,
       enableOutsideDays,
       firstDayOfWeek,
       formats,
+      fullscreen,
       isRtl,
       modifiers,
       month,
@@ -90,40 +97,43 @@ export function render(props) {
     month = getNextMonth(month);
   }
 
-  const weekdays = [];
-  for (let i = 0; i < 7; i++) {
-    const formatWeekday = formats.weekday.bind(formats);
-    const name = getWeekdayName(i, formatWeekday, firstDayOfWeek, isRtl);
-    weekdays.push(litHtml`
-    <span
-      style="width: ${daySize}px"
-      class="i-amphtml-date-calendar-weekday"
-    ><small>${name}</small></span>
-    `);
-  }
+  const weekdays = renderCalendarWeekdays({
+    daySize,
+    firstDayOfWeek,
+    formats,
+    isRtl,
+  });
 
-  const header = [];
-  for (let i = 0; i < numberOfMonths; i++) {
-    header.push(litHtml`
-    <div class="i-amphtml-date-calendar-weekdays">${weekdays}</div>
-    `);
+  let header = '';
+  if (!fullscreen) {
+    const headerWeekdays = [];
+    for (let i = 0; i < numberOfMonths; i++) {
+      headerWeekdays.push(litHtml`
+      <div class="i-amphtml-date-calendar-weekdays">${weekdays}</div>
+      `);
+    }
+    header = litHtml`
+    <div class="i-amphtml-date-calendar-header">${headerWeekdays}</div>
+    `;
   }
 
   const monthWidth = getMonthWidth(daySize) + 13 * 2;
-  const calendarWidth = monthWidth * numberOfMonths;
+  const calendarWidth = fullscreen ? 'auto' : monthWidth * numberOfMonths;
+  const boundaryWidth = fullscreen ? 'auto' : px(2000 + calendarWidth);
 
   return litHtml`
   <div
     class="i-amphtml-date-calendar-container"
     aria-label=${calendarLabel}
     role="application"
-    style="width: ${calendarWidth}px"
+    style="width: ${px(calendarWidth)}"
   >
-    <div class="i-amphtml-date-calendar-stationary">
-      <div class="i-amphtml-date-calendar-header">${header}</div>
-    </div>
+    <div class="i-amphtml-date-calendar-stationary">${header}</div>
     <div class="i-amphtml-date-calendar-transition">
-      <div class="i-amphtml-date-calendar-months">${months}</div>
+      <div
+        class="i-amphtml-date-calendar-months"
+        style="width: ${boundaryWidth}"
+      >${months}</div>
     </div>
     <div class="i-amphtml-date-calendar-navigation">
       <button
