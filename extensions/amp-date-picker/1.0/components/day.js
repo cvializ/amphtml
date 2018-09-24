@@ -32,7 +32,7 @@ import {until} from 'lit-html/lib/until';
  *  modifiers: !Object<string,function(!Date):boolean>,
  *  phrases: !../phrases.PhrasesDef,
  *  value: !Date,
- *  renderDay: ?function(!Date):Promise
+ *  renderDay: function(!Date):Promise
  * }}
  */
 let CalendarDayPropsDef;
@@ -85,9 +85,8 @@ export function render(props) {
   const tabindex = focused && !outsideButEnableable ? '0' : '-1';
 
   const cellText = outsideButEnableable ? '' : formattedDate;
-  const renderedText = renderDay ?
-    renderDay(value) : // renderDay(value, cellText) :
-    Promise.resolve(cellText);
+  const renderedText = renderDay(value);
+
   return litHtml`
   <td
     style="width: ${px(daySize)}; height: ${px(daySize - 1)}"

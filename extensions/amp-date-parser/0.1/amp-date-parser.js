@@ -18,7 +18,7 @@ import moment from 'moment/min/moment-with-locales.min'; //320kb : (
 
 const TAG = 'amp-date-parser';
 
-class AmpDateParser {
+export class AmpDateParser {
   /**
    * Construct the service
    */

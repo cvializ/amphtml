@@ -39,7 +39,7 @@ const DEFAULT_BORDER_SPACING = 0;
  *  month: !Date,
  *  monthTranslate: number,
  *  phrases: !../phrases.PhrasesDef,
- *  renderDay: ?function(!Date):Promise
+ *  renderDay: function(!Date):Promise
  * }}
  */
 let CalendarMonthPropsDef;

@@ -44,7 +44,7 @@ import {render as renderWeekdays} from './weekdays';
  *  monthTranslate: number,
  *  numberOfMonths: number,
  *  phrases: !../phrases.PhrasesDef,
- *  renderDay: ?function(!Date):Promise
+ *  renderDay: function(!Date):Promise
  * }}
  */
 let CalendarPropsDef;
@@ -129,6 +129,7 @@ export function render(props) {
   }
 
   // TODO(cvializ): Better way to minify?
+  // TODO(cvializ): Do the question mark a11y ux?
   return litHtml`
   <div
     class="i-amphtml-date-calendar-container"

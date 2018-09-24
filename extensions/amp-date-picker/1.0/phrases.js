@@ -53,7 +53,7 @@ export const Phrases = {
 /* eslint-disable max-len */ // REVIEW: is this ok?
 export const calendarLabel = 'Calendar';
 export const closeDatePicker = 'Close';
-export const focusStartDate = 'Interact with the calendar and add the check-in date for your trip.';
+export const focusStartDate = 'Interact with the calendar and add the dates for your trip.';
 export const clearDate = 'Clear Date';
 export const clearDates = 'Clear Dates';
 export const jumpToPrevMonth = 'Move backward to switch to the previous month.';
@@ -91,7 +91,7 @@ export const defaultPhrases = {
   [Phrases.DATE_IS_UNAVAILABLE]: dateIsUnavailable,
   [Phrases.ENTER_KEY]: enterKey,
   [Phrases.ESCAPE]: escape,
-  [Phrases.FOCUS_START_DATE]: focusStartDate, // TODO(cvializ): cancel?
+  [Phrases.FOCUS_START_DATE]: focusStartDate,
   [Phrases.HIDE_KEYBOARD_SHORTCUTS_PANEL]: hideKeyboardShortcutsPanel,
   [Phrases.HOME_END]: homeEnd,
   [Phrases.JUMP_TO_NEXT_MONTH]: jumpToNextMonth,

@@ -85,14 +85,19 @@
   <amp-state id="date"><script type="application/json">null</script></amp-state>
 
   <amp-date-picker
+    locale="en"
     on="select: AMP.setState({date: event.date})"
     layout="fixed-height"
     mode="static"
     height="360"
-    number-of-months="1"
+    number-of-months="4"
     blocked="2018-08-25"
-  ></amp-date-picker>
-  <span [text]="date.getMilliseconds()">null</span>
+  >
+    <template type="amp-mustache" date-template default>
+      <div>{{DD}}</div>
+    </template>
+  </amp-date-picker>
+  <span [text]="date">null</span>
 
   <amp-date-picker
     type="range"

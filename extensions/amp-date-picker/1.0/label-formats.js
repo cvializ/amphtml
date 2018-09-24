@@ -34,6 +34,11 @@ export class LabelFormats {
     /** @private @const {!Object<string, string>} */
     this.dayMemo_ = dict();
 
+    /** @private @const */
+    this.dayTwoDigit_ = new Intl.DateTimeFormat(locales, {day: '2-digit'});
+    /** @private @const {!Object<string, string>} */
+    this.dayTwoDigitMemo_ = dict();
+
     /*** @private @const */
     this.weekday_ = new Intl.DateTimeFormat(locales, {weekday: 'narrow'});
     /** @private @const {!Object<string, string>} */
@@ -66,6 +71,21 @@ export class LabelFormats {
     const key = String(date.getDate());
     const cached = this.dayMemo_[key];
     return cached || (this.dayMemo_[key] = this.day_.format(date));
+  }
+
+  /**
+   * Convert a Date to a string representing its day in the format's locale.
+   * Example: new Date(2018-01-02) -> "2"
+   * Cache the formatted days because it's an easy win, and it's expensive
+   * for the browser to repeatedly execute this.
+   * @param {!Date} date
+   * @return {string}
+   */
+  dayTwoDigit(date) {
+    const key = String(date.getDate());
+    const cached = this.dayTwoDigitMemo_[key];
+    return cached ||
+        (this.dayTwoDigitMemo_[key] = this.dayTwoDigit_.format(date));
   }
 
   /**

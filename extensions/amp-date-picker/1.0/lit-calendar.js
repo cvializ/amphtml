@@ -58,7 +58,7 @@ export const ActiveDateState = {
  *  onKeyboardNavigate: function(!Date):undefined,
  *  onSelectDate: function(?Date):undefined,
  *  phrases: !./phrases.PhrasesDef,
- *  renderDay: ?function(!Date):Promise
+ *  renderDay: function(!Date):Promise
  * }}
  */
 let LitCalendarPropsDef;
@@ -235,9 +235,9 @@ export class LitCalendar {
     });
     render(isOpen ? calendar : litHtml``, this.element);
 
-    // Use chunk because the lit-html uses microtasks. Wait 1 microtask.
-    // TODO explain better
-    // TODO is a deferred needed or is any microtask enough?
+    // lit-html uses microtasks to render, so we need to wait 1 microtask.
+    // TODO(cvializ): explain better
+    // TODO(cvializ): is a deferred needed or is any microtask enough?
     // REVIEW: jridgewell?
     const deferred = new Deferred();
     this.win.requestAnimationFrame(deferred.resolve);

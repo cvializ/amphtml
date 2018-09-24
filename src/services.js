@@ -173,10 +173,10 @@ export class Services {
 
   /**
    * @param {!Element|!./service/ampdoc-impl.AmpDoc} elementOrAmpDoc
-   * @return {!Promise<?../extensions/amp-bind/0.1/bind-impl.Bind>}
+   * @return {!Promise<?../extensions/amp-date-parser/0.1/amp-date-parser.AmpDateParser>}
    */
   static ampDateParserForDocOrNull(elementOrAmpDoc) {
-    return /** @type {!Promise<?../extensions/amp-bind/0.1/bind-impl.Bind>} */ (
+    return /** @type {!Promise<?../extensions/amp-date-parser/0.1/amp-date-parser.AmpDateParser>} */ (
       getElementServiceIfAvailableForDocInEmbedScope(
           elementOrAmpDoc, 'amp-date-parser', 'amp-date-parser'));
   }
