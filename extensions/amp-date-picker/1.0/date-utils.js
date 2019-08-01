@@ -144,8 +144,12 @@ export function parseIsoDateToLocal(input) {
   const date = new Date(input);
   const offset = date.getTimezoneOffset();
   return new Date(
-      date.getFullYear(), date.getMonth(), date.getDate(),
-      date.getHours(), date.getMinutes() + offset);
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+    date.getHours(),
+    date.getMinutes() + offset
+  );
 }
 
 /**
@@ -180,14 +184,21 @@ export function isAfterInclusive(a, b) {
  * @param {number} opt_seconds
  * @return {!Date}
  */
-export function addToDate(date,
-  opt_years = 0, opt_months = 0, opt_days = 0,
-  opt_hours = 0, opt_minutes = 0, opt_seconds = 0) {
+export function addToDate(
+  date,
+  opt_years = 0,
+  opt_months = 0,
+  opt_days = 0,
+  opt_hours = 0,
+  opt_minutes = 0,
+  opt_seconds = 0
+) {
   return new Date(
-      date.getFullYear() + opt_years,
-      date.getMonth() + opt_months,
-      date.getDate() + opt_days,
-      date.getHours() + opt_hours,
-      date.getMinutes() + opt_minutes,
-      date.getSeconds() + opt_seconds);
+    date.getFullYear() + opt_years,
+    date.getMonth() + opt_months,
+    date.getDate() + opt_days,
+    date.getHours() + opt_hours,
+    date.getMinutes() + opt_minutes,
+    date.getSeconds() + opt_seconds
+  );
 }

@@ -45,7 +45,7 @@ import {createDeferred} from './react-utils';
 import {createSingleDatePicker} from './single-date-picker';
 import {dashToCamelCase} from '../../../src/string';
 import {dev, devAssert, user, userAssert} from '../../../src/log';
-import {dict, map} from '../../../src/utils/object';
+import {dict} from '../../../src/utils/object';
 import {escapeCssSelectorIdent} from '../../../src/css';
 import {once} from '../../../src/utils/function';
 import {requireExternal} from '../../../src/module';
@@ -83,60 +83,6 @@ const attributesToForward = [
   'minimum-nights',
   'maximum-nights',
 ];
-
-/** @enum {string} */
-const DatePickerMode = {
-  STATIC: 'static',
-  OVERLAY: 'overlay',
-};
-
-/**
- * @enum {string}
- * @private visible for testing
- */
-export const DatePickerState = {
-  OVERLAY_CLOSED: 'overlay-closed',
-  OVERLAY_OPEN_INPUT: 'overlay-open-input',
-  OVERLAY_OPEN_PICKER: 'overlay-open-picker',
-  STATIC: 'static',
-};
-
-/** @enum {string} */
-const DatePickerType = {
-  SINGLE: 'single',
-  RANGE: 'range',
-};
-
-/** @enum {string} */
-const DateFieldType = {
-  DATE: 'input',
-  START_DATE: 'start-input',
-  END_DATE: 'end-input',
-};
-
-const DateFieldNameByType = {
-  [DateFieldType.DATE]: 'date',
-  [DateFieldType.START_DATE]: 'start-date',
-  [DateFieldType.END_DATE]: 'end-date',
-};
-
-/** @enum {string} */
-const DatePickerEvent = {
-  /**
-   * Triggered when the overlay opens or when the static date picker should
-   * receive focus from the attached input.
-   */
-  ACTIVATE: 'activate',
-
-  /**
-   * Triggered when the overlay closes or when the static date picker has
-   * finished selecting.
-   */
-  DEACTIVATE: 'deactivate',
-
-  /** Triggered when the user selects a date range. */
-  SELECT: 'select',
-};
 
 /**
  * The size in PX of each calendar day. This value allows the date picker to
@@ -674,42 +620,68 @@ export class AmpDatePicker extends AMP.BaseElement {
 
     if (this.type_ === DatePickerType.SINGLE) {
       this.dateField_ = setupDateField(
-          this.getAmpDoc(), this.element, this.mode_, DateFieldType.DATE);
-      if (this.mode_ == DatePickerMode.OVERLAY &&
-          this.dateField_ === null) {
-        user().error(TAG,
-            'Overlay single pickers must specify "input-selector" to ' +
-            'an existing input element.');
+        this.getAmpDoc(),
+        this.element,
+        this.mode_,
+        DateFieldType.DATE
+      );
+      if (this.mode_ == DatePickerMode.OVERLAY && this.dateField_ === null) {
+        user().error(
+          TAG,
+          'Overlay single pickers must specify "input-selector" to ' +
+            'an existing input element.'
+        );
       }
     } else if (this.type_ === DatePickerType.RANGE) {
       this.startDateField_ = setupDateField(
-          this.getAmpDoc(), this.element, this.mode_, DateFieldType.START_DATE);
+        this.getAmpDoc(),
+        this.element,
+        this.mode_,
+        DateFieldType.START_DATE
+      );
       this.endDateField_ = setupDateField(
-          this.getAmpDoc(), this.element, this.mode_, DateFieldType.END_DATE);
+        this.getAmpDoc(),
+        this.element,
+        this.mode_,
+        DateFieldType.END_DATE
+      );
 
-      if (this.mode_ == DatePickerMode.OVERLAY &&
-          (!this.startDateField_ || !this.endDateField_)) {
-        user().error(TAG,
-            'Overlay range pickers must "start-input-selector" and ' +
-            '"end-input-selector" to existing start and end input elements.');
+      if (
+        this.mode_ == DatePickerMode.OVERLAY &&
+        (!this.startDateField_ || !this.endDateField_)
+      ) {
+        user().error(
+          TAG,
+          'Overlay range pickers must "start-input-selector" and ' +
+            '"end-input-selector" to existing start and end input elements.'
+        );
       }
     } else {
       user().error(TAG, 'Invalid date picker type', this.type_);
     }
 
-    this.registerAction('setDate',
-        invocation => this.handleSetDateFromString_(invocation.args['date']));
-    this.registerAction('setDates',
-        invocation => this.handleSetDatesFromString_(
-            invocation.args['startDate'],
-            invocation.args['endDate']));
+    this.registerAction('setDate', invocation =>
+      this.handleSetDateFromString_(invocation.args['date'])
+    );
+    this.registerAction('setDates', invocation =>
+      this.handleSetDatesFromString_(
+        invocation.args['startDate'],
+        invocation.args['endDate']
+      )
+    );
     this.registerAction('clear', () => this.handleClear_());
-    this.registerAction('today',
-        this.todayAction_.bind(this, d => this.handleSetDate_(d)));
-    this.registerAction('startToday',
-        this.todayAction_.bind(this, d => this.handleSetDates_(d, null)));
-    this.registerAction('endToday',
-        this.todayAction_.bind(this, d => this.handleSetDates_(null, d)));
+    this.registerAction(
+      'today',
+      this.todayAction_.bind(this, d => this.handleSetDate_(d))
+    );
+    this.registerAction(
+      'startToday',
+      this.todayAction_.bind(this, d => this.handleSetDates_(d, null))
+    );
+    this.registerAction(
+      'endToday',
+      this.todayAction_.bind(this, d => this.handleSetDates_(null, d))
+    );
 
     devAssert(
       this.stateMachine_,

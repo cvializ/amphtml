@@ -48,12 +48,12 @@ export const Phrases = {
   SELECT_FOCUSED_DATE: 'select-focused-date',
   SHOW_KEYBOARD_SHORTCUTS_PANEL: 'show-keyboard-shortcuts-panel',
   UP_ARROW_DOWN_ARROW: 'up-arrow-down-arrow',
-};
+}; // REVIEW: is this ok?
 
-/* eslint-disable max-len */ // REVIEW: is this ok?
-export const calendarLabel = 'Calendar';
+/* eslint-disable max-len */ export const calendarLabel = 'Calendar';
 export const closeDatePicker = 'Close';
-export const focusStartDate = 'Interact with the calendar and add the dates for your trip.';
+export const focusStartDate =
+  'Interact with the calendar and add the dates for your trip.';
 export const clearDate = 'Clear Date';
 export const clearDates = 'Clear Dates';
 export const jumpToPrevMonth = 'Move backward to switch to the previous month.';
@@ -70,14 +70,20 @@ export const homeEnd = 'Home and end keys';
 export const escape = 'Escape key';
 export const questionMark = 'Question mark';
 export const selectFocusedDate = 'Select the date in focus.';
-export const moveFocusByOneDay = 'Move backward (left) and forward (right) by one day.';
-export const moveFocusByOneWeek = 'Move backward (up) and forward (down) by one week.';
+export const moveFocusByOneDay =
+  'Move backward (left) and forward (right) by one day.';
+export const moveFocusByOneWeek =
+  'Move backward (up) and forward (down) by one week.';
 export const moveFocusByOneMonth = 'Switch months.';
-export const moveFocusToStartAndEndOfWeek = 'Go to the first or last day of a week.';
+export const moveFocusToStartAndEndOfWeek =
+  'Go to the first or last day of a week.';
 export const returnFocusToInput = 'Return to the date input field.';
-export const keyboardNavigationInstructions = 'Press the down arrow key to interact with the calendar and export select a date. Press the question mark key to get the keyboard shortcuts for changing dates.';
-export const chooseAvailableStartDate = 'Choose %s as your start date. It\'s available.';
-export const chooseAvailableEndDate = 'Choose %s as your end date. It\'s available.';
+export const keyboardNavigationInstructions =
+  'Press the down arrow key to interact with the calendar and export select a date. Press the question mark key to get the keyboard shortcuts for changing dates.';
+export const chooseAvailableStartDate =
+  "Choose %s as your start date. It's available.";
+export const chooseAvailableEndDate =
+  "Choose %s as your end date. It's available.";
 export const chooseAvailableDate = '%s';
 export const dateIsUnavailable = 'Not available. %s';
 /* eslint-enable max-len */

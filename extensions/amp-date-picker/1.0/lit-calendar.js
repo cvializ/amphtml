@@ -24,10 +24,7 @@ import {
 } from './date-utils';
 import {dev} from '../../../src/log';
 import {listen} from '../../../src/event-helper';
-import {
-  html as litHtml,
-  render,
-} from 'lit-html/lit-html';
+import {html as litHtml, render} from 'lit-html/lit-html';
 import {render as renderCalendar} from './components/calendar';
 /** @enum {string} */
 export const ActiveDateState = {
@@ -107,10 +104,7 @@ export class LitCalendar {
 
     listen(this.element, 'focusin', e => {
       const target = dev().assertElement(e.target);
-      const {
-        onGridFocusChange,
-        onGridFocusCaptureChange,
-      } = this.getProps_();
+      const {onGridFocusChange, onGridFocusCaptureChange} = this.getProps_();
 
       const dateString = target.dataset['iAmphtmlDate'];
       if (dateString) {
@@ -124,18 +118,17 @@ export class LitCalendar {
     listen(this.element, 'focusout', e => {
       const {onGridFocusCaptureChange} = this.getProps_();
       const {relatedTarget} = e;
-      if (!relatedTarget ||
-          !this.element.contains(dev().assertElement(relatedTarget))) {
+      if (
+        !relatedTarget ||
+        !this.element.contains(dev().assertElement(relatedTarget))
+      ) {
         onGridFocusCaptureChange(false);
       }
     });
 
     // https://www.w3.org/TR/2009/WD-wai-aria-practices-20090224/
     listen(this.element, 'keydown', e => {
-      const {
-        focusedDate,
-        onKeyboardNavigate,
-      } = this.props_;
+      const {focusedDate, onKeyboardNavigate} = this.props_;
       const {key, shiftKey, target} = e;
 
       if (target && (key == ' ' || key == 'Enter')) {
@@ -144,8 +137,11 @@ export class LitCalendar {
         return;
       }
 
-      const maybeDestinationDay =
-          getKeyboardNavigationDate(focusedDate, key, shiftKey);
+      const maybeDestinationDay = getKeyboardNavigationDate(
+        focusedDate,
+        key,
+        shiftKey
+      );
       if (maybeDestinationDay) {
         e.preventDefault();
         onKeyboardNavigate(/** @type {!Date} */ (maybeDestinationDay));
@@ -172,17 +168,17 @@ export class LitCalendar {
     }
 
     if (target.classList.contains('i-amphtml-date-calendar-right')) {
-      const month = isRtl ?
-        getPreviousMonth(displayedDate) :
-        getNextMonth(displayedDate);
+      const month = isRtl
+        ? getPreviousMonth(displayedDate)
+        : getNextMonth(displayedDate);
       onDisplayedDateChange(month);
       return;
     }
 
     if (target.classList.contains('i-amphtml-date-calendar-left')) {
-      const month = isRtl ?
-        getNextMonth(displayedDate) :
-        getPreviousMonth(displayedDate);
+      const month = isRtl
+        ? getNextMonth(displayedDate)
+        : getPreviousMonth(displayedDate);
       onDisplayedDateChange(month);
       return;
     }
@@ -255,16 +251,23 @@ export class LitCalendar {
  */
 function getKeyboardNavigationDate(date, key, shiftKey) {
   switch (key) {
-    case 'ArrowRight': return addToDate(date, 0, 0, 1);
-    case 'ArrowLeft': return addToDate(date, 0, 0, -1);
-    case 'ArrowDown': return addToDate(date, 0, 0, 7);
-    case 'ArrowUp': return addToDate(date, 0, 0, -7);
+    case 'ArrowRight':
+      return addToDate(date, 0, 0, 1);
+    case 'ArrowLeft':
+      return addToDate(date, 0, 0, -1);
+    case 'ArrowDown':
+      return addToDate(date, 0, 0, 7);
+    case 'ArrowUp':
+      return addToDate(date, 0, 0, -7);
     case 'PageDown':
       return shiftKey ? addToDate(date, 1, 0, 0) : addToDate(date, 0, 1, 0);
     case 'PageUp':
       return shiftKey ? addToDate(date, -1, 0, 0) : addToDate(date, 0, -1, 0);
-    case 'Home': return getFirstDayOfMonth(date);
-    case 'End': return getLastDayOfMonth(date);
-    default: return null;
+    case 'Home':
+      return getFirstDayOfMonth(date);
+    case 'End':
+      return getLastDayOfMonth(date);
+    default:
+      return null;
   }
 }

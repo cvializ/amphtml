@@ -26,8 +26,10 @@ export class LabelFormats {
    */
   constructor(locales) {
     /*** @private @const */
-    this.month_ = new Intl.DateTimeFormat(locales,
-        {month: 'long', year: 'numeric'});
+    this.month_ = new Intl.DateTimeFormat(locales, {
+      month: 'long',
+      year: 'numeric',
+    });
 
     /** @private @const */
     this.day_ = new Intl.DateTimeFormat(locales, {day: 'numeric'});
@@ -45,8 +47,12 @@ export class LabelFormats {
     this.weekdayMemo_ = dict();
 
     /*** @private @const */
-    this.date_ = new Intl.DateTimeFormat(locales,
-        {weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'});
+    this.date_ = new Intl.DateTimeFormat(locales, {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    });
   }
 
   /**
@@ -84,8 +90,9 @@ export class LabelFormats {
   dayTwoDigit(date) {
     const key = String(date.getDate());
     const cached = this.dayTwoDigitMemo_[key];
-    return cached ||
-        (this.dayTwoDigitMemo_[key] = this.dayTwoDigit_.format(date));
+    return (
+      cached || (this.dayTwoDigitMemo_[key] = this.dayTwoDigit_.format(date))
+    );
   }
 
   /**

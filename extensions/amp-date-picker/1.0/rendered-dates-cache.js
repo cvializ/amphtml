@@ -14,13 +14,8 @@
  * limitations under the License.
  */
 
-import {
-  isAfter,
-  isBefore,
-  isBetween,
-} from './date-utils';
+import {isAfter, isBefore, isBetween} from './date-utils';
 import {map} from '../../../src/utils/object';
-
 
 export class RenderedDatesCache {
   /**
@@ -52,6 +47,7 @@ export class RenderedDatesCache {
   /**
    * Get a value from the cache
    * @param {!Date} key
+   * @return {!Element|undefined}
    */
   get(key) {
     return this.map_[this.cacheFn_(key)];
