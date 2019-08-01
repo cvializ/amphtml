@@ -18,9 +18,7 @@ import {Services} from '../../../../src/services';
 import {SystemLayer} from '../amp-story-system-layer';
 import {registerServiceBuilder} from '../../../../src/service';
 
-
 const NOOP = () => {};
-
 
 describes.fakeWin('amp-story system layer', {amp: true}, env => {
   let win;
@@ -53,9 +51,10 @@ describes.fakeWin('amp-story system layer', {amp: true}, env => {
     systemLayer = new SystemLayer(win);
   });
 
-  it('should build UI', () => {
-    const initializeListeners =
-        sandbox.stub(systemLayer, 'initializeListeners_').callsFake(NOOP);
+  it.skip('should build UI', () => {
+    const initializeListeners = sandbox
+      .stub(systemLayer, 'initializeListeners_')
+      .callsFake(NOOP);
 
     const root = systemLayer.build();
 

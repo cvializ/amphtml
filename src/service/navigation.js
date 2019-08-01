@@ -16,31 +16,47 @@
 
 import {Services} from '../services';
 import {
-  closestByTag,
-  escapeCssSelectorIdent,
+  closestAncestorElementBySelector,
   isIframed,
   openWindowDialog,
+  tryFocus,
 } from '../dom';
-import {dev, user} from '../log';
-import {
-  getExtraParamsUrl,
-  shouldAppendExtraParams,
-} from '../impression';
+import {dev, user, userAssert} from '../log';
+import {dict} from '../utils/object';
+import {escapeCssSelectorIdent} from '../css';
+import {getExtraParamsUrl, shouldAppendExtraParams} from '../impression';
 import {getMode} from '../mode';
 import {
   installServiceInEmbedScope,
   registerServiceBuilderForDoc,
 } from '../service';
 import {toWin} from '../types';
+import PriorityQueue from '../utils/priority-queue';
 
 const TAG = 'navigation';
 /** @private @const {string} */
 const EVENT_TYPE_CLICK = 'click';
 /** @private @const {string} */
 const EVENT_TYPE_CONTEXT_MENU = 'contextmenu';
+const VALID_TARGETS = ['_top', '_blank'];
 
 /** @private @const {string} */
 const ORIG_HREF_ATTRIBUTE = 'data-a4a-orig-href';
+
+/**
+ * Key used for retargeting event target originating from shadow DOM.
+ * @const {string}
+ */
+const AMP_CUSTOM_LINKER_TARGET = '__AMP_CUSTOM_LINKER_TARGET__';
+
+/**
+ * @enum {number} Priority reserved for extensions in anchor mutations.
+ * The higher the priority, the sooner it's invoked.
+ */
+export const Priority = {
+  LINK_REWRITER_MANAGER: 0,
+  ANALYTICS_LINKER: 2,
+};
 
 /**
  * Install navigation service for ampdoc, which handles navigations from anchor
@@ -52,10 +68,11 @@ const ORIG_HREF_ATTRIBUTE = 'data-a4a-orig-href';
  */
 export function installGlobalNavigationHandlerForDoc(ampdoc) {
   registerServiceBuilderForDoc(
-      ampdoc,
-      TAG,
-      Navigation,
-      /* opt_instantiate */ true);
+    ampdoc,
+    TAG,
+    Navigation,
+    /* opt_instantiate */ true
+  );
 }
 
 /**
@@ -79,6 +96,8 @@ export class Navigation {
    * @param {(!Document|!ShadowRoot)=} opt_rootNode
    */
   constructor(ampdoc, opt_rootNode) {
+    // TODO(#22733): remove subroooting once ampdoc-fie is launched.
+
     /** @const {!./ampdoc-impl.AmpDoc} */
     this.ampdoc = ampdoc;
 
@@ -94,20 +113,32 @@ export class Navigation {
     /** @private @const {!./history-impl.History} */
     this.history_ = Services.historyForDoc(this.ampdoc);
 
-    const platform = Services.platformFor(this.ampdoc.win);
+    /** @private @const {!./platform-impl.Platform} */
+    this.platform_ = Services.platformFor(this.ampdoc.win);
+
     /** @private @const {boolean} */
-    this.isIosSafari_ = platform.isIos() && platform.isSafari();
+    this.isIosSafari_ = this.platform_.isIos() && this.platform_.isSafari();
 
     /** @private @const {boolean} */
     this.isIframed_ =
-        isIframed(this.ampdoc.win) && this.viewer_.isOvertakeHistory();
+      isIframed(this.ampdoc.win) && this.viewer_.isOvertakeHistory();
 
     /** @private @const {boolean} */
-    this.isEmbed_ = this.rootNode_ != this.ampdoc.getRootNode();
+    this.isEmbed_ =
+      this.rootNode_ != this.ampdoc.getRootNode() || !!this.ampdoc.getParent();
 
     /** @private @const {boolean} */
     this.isInABox_ = getMode(this.ampdoc.win).runtime == 'inabox';
 
+    /**
+     * Must use URL parsing scoped to `rootNode_` for correct FIE behavior.
+     * @private @const {!Element|!ShadowRoot}
+     */
+    this.serviceContext_ =
+      /** @type {!Element|!ShadowRoot} */ (this.rootNode_.nodeType ==
+      Node.DOCUMENT_NODE
+        ? this.rootNode_.documentElement
+        : this.rootNode_);
 
     /** @private @const {!function(!Event)|undefined} */
     this.boundHandle_ = this.handle_.bind(this);
@@ -124,6 +155,20 @@ export class Navigation {
      * @private {?Array<string>}
      */
     this.a2aFeatures_ = null;
+
+    /**
+     * @type {!PriorityQueue<function(!Element, !Event)>}
+     * @private
+     * @const
+     */
+    this.anchorMutators_ = new PriorityQueue();
+
+    /**
+     * @type {!PriorityQueue<function(string)>}
+     * @private
+     * @const
+     */
+    this.navigateToMutators_ = new PriorityQueue();
   }
 
   /**
@@ -133,14 +178,24 @@ export class Navigation {
    * @param {!Window} win
    */
   static installAnchorClickInterceptor(ampdoc, win) {
-    win.document.documentElement.addEventListener('click',
-        maybeExpandUrlParams.bind(null, ampdoc), /* capture */ true);
+    win.document.documentElement.addEventListener(
+      'click',
+      maybeExpandUrlParams.bind(null, ampdoc),
+      /* capture */ true
+    );
   }
 
-  /** @override */
-  adoptEmbedWindow(embedWin) {
-    installServiceInEmbedScope(embedWin, TAG,
-        new Navigation(this.ampdoc, embedWin.document));
+  /**
+   * @param {!Window} embedWin
+   * @param {!./ampdoc-impl.AmpDoc} ampdoc
+   * @nocollapse
+   */
+  static installInEmbedWindow(embedWin, ampdoc) {
+    installServiceInEmbedScope(
+      embedWin,
+      TAG,
+      new Navigation(ampdoc, embedWin.document)
+    );
   }
 
   /**
@@ -150,7 +205,36 @@ export class Navigation {
     if (this.boundHandle_) {
       this.rootNode_.removeEventListener(EVENT_TYPE_CLICK, this.boundHandle_);
       this.rootNode_.removeEventListener(
-          EVENT_TYPE_CONTEXT_MENU, this.boundHandle_);
+        EVENT_TYPE_CONTEXT_MENU,
+        this.boundHandle_
+      );
+    }
+  }
+
+  /**
+   * Opens a new window with the specified target.
+   *
+   * @param {!Window} win A window to use to open a new window.
+   * @param {string} url THe URL to open.
+   * @param {string} target The target for the newly opened window.
+   * @param {boolean} opener Whether or not the new window should have acccess
+   *   to the opener (win).
+   */
+  openWindow(win, url, target, opener) {
+    let options = '';
+    // We don't pass noopener for Chrome since it opens a new window without
+    // tabs. Instead, we remove the opener property from the newly opened
+    // window.
+    // Note: for Safari, we need to use noopener instead of clearing the opener
+    // property.
+    if ((this.platform_.isIos() || !this.platform_.isChrome()) && !opener) {
+      options += 'noopener';
+    }
+
+    const newWin = openWindowDialog(win, url, target, options);
+    // For Chrome, since we cannot use noopener.
+    if (newWin && !opener) {
+      newWin.opener = null;
     }
   }
 
@@ -163,11 +247,34 @@ export class Navigation {
    * @param {!Window} win
    * @param {string} url
    * @param {string=} opt_requestedBy
+   * @param {!{
+   *   target: (string|undefined),
+   *   opener: (boolean|undefined),
+   * }=} opt_options
    */
-  navigateTo(win, url, opt_requestedBy) {
-    const urlService = Services.urlForDoc(this.ampdoc);
+  navigateTo(
+    win,
+    url,
+    opt_requestedBy,
+    {target = '_top', opener = false} = {}
+  ) {
+    url = this.applyNavigateToMutators_(url);
+    const urlService = Services.urlForDoc(this.serviceContext_);
     if (!urlService.isProtocolValid(url)) {
       user().error(TAG, 'Cannot navigate to invalid protocol: ' + url);
+      return;
+    }
+
+    userAssert(
+      VALID_TARGETS.includes(target),
+      `Target '${target}' not supported.`
+    );
+
+    // If we have a target of "_blank", we will want to open a new window. A
+    // target of "_top" should behave like it would on an anchor tag and
+    // update the URL.
+    if (target == '_blank') {
+      this.openWindow(win, url, target, opener);
       return;
     }
 
@@ -178,7 +285,7 @@ export class Navigation {
         this.a2aFeatures_ = this.queryA2AFeatures_();
       }
       if (this.a2aFeatures_.includes(opt_requestedBy)) {
-        if (this.viewer_.navigateToAmpUrl(url, opt_requestedBy)) {
+        if (this.navigateToAmpUrl(url, opt_requestedBy)) {
           return;
         }
       }
@@ -189,14 +296,42 @@ export class Navigation {
   }
 
   /**
+   * Requests A2A navigation to the given destination. If the viewer does
+   * not support this operation, does nothing.
+   * The URL is assumed to be in AMP Cache format already.
+   * @param {string} url An AMP article URL.
+   * @param {string} requestedBy Informational string about the entity that
+   *     requested the navigation.
+   * @return {boolean} Returns true if navigation message was sent to viewer.
+   *     Otherwise, returns false.
+   */
+  navigateToAmpUrl(url, requestedBy) {
+    if (this.viewer_.hasCapability('a2a')) {
+      this.viewer_.sendMessage(
+        'a2aNavigate',
+        dict({
+          'url': url,
+          'requestedBy': requestedBy,
+        })
+      );
+      return true;
+    }
+    return false;
+  }
+
+  /**
    * @return {!Array<string>}
    * @private
    */
   queryA2AFeatures_() {
     const meta = this.rootNode_.querySelector(
-        'meta[name="amp-to-amp-navigation"]');
+      'meta[name="amp-to-amp-navigation"]'
+    );
     if (meta && meta.hasAttribute('content')) {
-      return meta.getAttribute('content').split(',').map(s => s.trim());
+      return meta
+        .getAttribute('content')
+        .split(',')
+        .map(s => s.trim());
     }
     return [];
   }
@@ -215,21 +350,18 @@ export class Navigation {
     if (e.defaultPrevented) {
       return;
     }
-    const target = closestByTag(dev().assertElement(e.target), 'A');
+    const element = dev().assertElement(
+      e[AMP_CUSTOM_LINKER_TARGET] || e.target
+    );
+    const target = closestAncestorElementBySelector(element, 'A');
     if (!target || !target.href) {
       return;
     }
+
     if (e.type == EVENT_TYPE_CLICK) {
       this.handleClick_(target, e);
     } else if (e.type == EVENT_TYPE_CONTEXT_MENU) {
-      // Handles contextmenu click. Note that currently this only deals
-      // with url variable substitution and expansion, as there is
-      // straightforward way of determining what the user clicked in the
-      // context menu, required for A2A navigation and custom link protocol
-      // handling.
-      // TODO(alabiaga): investigate fix for handling A2A and custom link
-      // protocols.
-      this.expandVarsForAnchor_(target);
+      this.handleContextMenuClick_(target, e);
     }
   }
 
@@ -241,7 +373,7 @@ export class Navigation {
   handleClick_(target, e) {
     this.expandVarsForAnchor_(target);
 
-    const location = this.parseUrl_(target.href);
+    let location = this.parseUrl_(target.href);
 
     // Handle AMP-to-AMP navigation if rel=amphtml.
     if (this.handleA2AClick_(e, target, location)) {
@@ -253,8 +385,51 @@ export class Navigation {
       return;
     }
 
+    this.applyAnchorMutators_(target, e);
+    location = this.parseUrl_(target.href);
+
     // Finally, handle normal click-navigation behavior.
     this.handleNavClick_(e, target, location);
+  }
+
+  /**
+   * @param {!Element} target
+   * @param {!Event} e
+   * @private
+   */
+  handleContextMenuClick_(target, e) {
+    // Handles contextmenu click. Note that currently this only deals
+    // with url variable substitution and expansion, as there is
+    // straightforward way of determining what the user clicked in the
+    // context menu, required for A2A navigation and custom link protocol
+    // handling.
+    // TODO(alabiaga): investigate fix for handling A2A and custom link
+    // protocols.
+    this.expandVarsForAnchor_(target);
+    this.applyAnchorMutators_(target, e);
+  }
+
+  /**
+   * Apply anchor transformations.
+   * @param {!Element} target
+   * @param {!Event} e
+   */
+  applyAnchorMutators_(target, e) {
+    this.anchorMutators_.forEach(anchorMutator => {
+      anchorMutator(target, e);
+    });
+  }
+
+  /**
+   * Apply URL transformations for AMP.navigateTo.
+   * @param {string} url
+   * @return {string}
+   */
+  applyNavigateToMutators_(url) {
+    this.navigateToMutators_.forEach(mutator => {
+      url = mutator(url);
+    });
+    return url;
   }
 
   /**
@@ -330,18 +505,20 @@ export class Navigation {
     if (!target.hasAttribute('rel')) {
       return false;
     }
-    const relations = target.getAttribute('rel').split(' ').map(s => s.trim());
+    const relations = target
+      .getAttribute('rel')
+      .split(' ')
+      .map(s => s.trim());
     if (!relations.includes('amphtml')) {
       return false;
     }
     // The viewer may not support the capability for navigating AMP links.
-    if (this.viewer_.navigateToAmpUrl(location.href, '<a rel=amphtml>')) {
+    if (this.navigateToAmpUrl(location.href, '<a rel=amphtml>')) {
       e.preventDefault();
       return true;
     }
     return false;
   }
-
 
   /**
    * Handles clicking on a link with hash navigation.
@@ -353,9 +530,8 @@ export class Navigation {
   handleNavClick_(e, target, tgtLoc) {
     // In test mode, we're not able to properly fix the anchor tag's base URL.
     // So, we have to use the (mocked) window's location instead.
-    const baseHref = getMode().test && !this.isEmbed_
-      ? this.ampdoc.win.location.href
-      : '';
+    const baseHref =
+      getMode().test && !this.isEmbed_ ? this.ampdoc.win.location.href : '';
     const curLoc = this.parseUrl_(baseHref);
     const tgtHref = `${tgtLoc.origin}${tgtLoc.pathname}${tgtLoc.search}`;
     const curHref = `${curLoc.origin}${curLoc.pathname}${curLoc.search}`;
@@ -370,6 +546,26 @@ export class Navigation {
         const targetAttr = (target.getAttribute('target') || '').toLowerCase();
         if (targetAttr != '_top' && targetAttr != '_blank') {
           target.setAttribute('target', '_blank');
+        }
+        return; // bail early.
+      }
+
+      // Accessibility fix for IE browser.
+      // Issue: anchor navigation in IE changes visual focus of the browser
+      // and shifts to the element being linked to,
+      // where the input focus stays where it was.
+      // @see https://humanwhocodes.com/blog/2013/01/15/fixing-skip-to-content-links/
+      // @see https://github.com/ampproject/amphtml/issues/18671
+      if (Services.platformFor(this.ampdoc.win).isIe()) {
+        const internalTargetElmId = tgtLoc.hash.substring(1);
+        const internalElm = this.ampdoc.getElementById(internalTargetElmId);
+        if (internalElm) {
+          if (
+            !/^(?:a|select|input|button|textarea)$/i.test(internalElm.tagName)
+          ) {
+            internalElm.tabIndex = -1;
+          }
+          tryFocus(internalElm);
         }
       }
       return;
@@ -391,10 +587,11 @@ export class Navigation {
     let elem = null;
     if (hash) {
       const escapedHash = escapeCssSelectorIdent(hash);
-      elem = (this.rootNode_.getElementById(hash) ||
-          // Fallback to anchor[name] if element with id is not found.
-          // Linking to an anchor element with name is obsolete in html5.
-          this.rootNode_./*OK*/querySelector(`a[name="${escapedHash}"]`));
+      elem =
+        this.rootNode_.getElementById(hash) ||
+        // Fallback to anchor[name] if element with id is not found.
+        // Linking to an anchor element with name is obsolete in html5.
+        this.rootNode_./*OK*/ querySelector(`a[name="${escapedHash}"]`);
     }
 
     // If possible do update the URL with the hash. As explained above
@@ -407,6 +604,22 @@ export class Navigation {
       // If the hash did not update just scroll to the element.
       this.scrollToElement_(elem, hash);
     }
+  }
+
+  /**
+   * @param {function(!Element, !Event)} callback
+   * @param {number} priority
+   */
+  registerAnchorMutator(callback, priority) {
+    this.anchorMutators_.enqueue(callback, priority);
+  }
+
+  /**
+   * @param {function(string)} callback
+   * @param {number} priority
+   */
+  registerNavigateToMutator(callback, priority) {
+    this.navigateToMutators_.enqueue(callback, priority);
   }
 
   /**
@@ -426,12 +639,16 @@ export class Navigation {
       // failing to calculate the new jumped offset. Without the first call
       // there will be a visual jump due to browser scroll. See
       // https://github.com/ampproject/amphtml/issues/5334 for more details.
-      this.viewport_./*OK*/scrollIntoView(elem);
-      Services.timerFor(this.ampdoc.win).delay(() =>
-        this.viewport_./*OK*/scrollIntoView(dev().assertElement(elem)), 1);
+      this.viewport_./*OK*/ scrollIntoView(elem);
+      Services.timerFor(this.ampdoc.win).delay(
+        () => this.viewport_./*OK*/ scrollIntoView(dev().assertElement(elem)),
+        1
+      );
     } else {
-      dev().warn(TAG,
-          `failed to find element with id=${hash} or a[name=${hash}]`);
+      dev().warn(
+        TAG,
+        `failed to find element with id=${hash} or a[name=${hash}]`
+      );
     }
   }
 
@@ -441,8 +658,7 @@ export class Navigation {
    * @private
    */
   parseUrl_(url) {
-    // Must use URL parsing scoped to this.rootNode_ for correct FIE behavior.
-    return Services.urlForDoc(this.rootNode_).parse(url);
+    return Services.urlForDoc(this.serviceContext_).parse(url);
   }
 }
 
@@ -454,13 +670,16 @@ export class Navigation {
  * @param {!Event} e
  */
 function maybeExpandUrlParams(ampdoc, e) {
-  const target = closestByTag(dev().assertElement(e.target), 'A');
+  const target = closestAncestorElementBySelector(
+    dev().assertElement(e.target),
+    'A'
+  );
   if (!target || !target.href) {
     // Not a click on a link.
     return;
   }
   const hrefToExpand =
-      target.getAttribute(ORIG_HREF_ATTRIBUTE) || target.getAttribute('href');
+    target.getAttribute(ORIG_HREF_ATTRIBUTE) || target.getAttribute('href');
   if (!hrefToExpand) {
     return;
   }
@@ -472,14 +691,18 @@ function maybeExpandUrlParams(ampdoc, e) {
       return e.pageY;
     },
   };
-  const newHref = Services.urlReplacementsForDoc(ampdoc).expandUrlSync(
-      hrefToExpand, vars, undefined, /* opt_whitelist */ {
-        // For now we only allow to replace the click location vars
-        // and nothing else.
-        // NOTE: Addition to this whitelist requires additional review.
-        'CLICK_X': true,
-        'CLICK_Y': true,
-      });
+  const newHref = Services.urlReplacementsForDoc(target).expandUrlSync(
+    hrefToExpand,
+    vars,
+    undefined,
+    /* opt_whitelist */ {
+      // For now we only allow to replace the click location vars
+      // and nothing else.
+      // NOTE: Addition to this whitelist requires additional review.
+      'CLICK_X': true,
+      'CLICK_Y': true,
+    }
+  );
   if (newHref != hrefToExpand) {
     // Store original value so that later clicks can be processed with
     // freshest values.

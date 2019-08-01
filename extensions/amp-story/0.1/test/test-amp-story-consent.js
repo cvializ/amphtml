@@ -16,8 +16,7 @@
 
 import {AmpStoryConsent} from '../amp-story-consent';
 import {AmpStoryStoreService, StateProperty} from '../amp-story-store-service';
-import {LocalizationService} from '../localization';
-import {computedStyle} from '../../../../src/style';
+import {LocalizationService} from '../../../../src/service/localization';
 import {registerServiceBuilder} from '../../../../src/service';
 
 describes.realWin('amp-story-consent', {amp: true}, env => {
@@ -47,8 +46,9 @@ describes.realWin('amp-story-consent', {amp: true}, env => {
     };
 
     const styles = {'background-color': 'rgb(0, 0, 0)'};
-    getComputedStyleStub =
-        sandbox.stub(win, 'getComputedStyle').returns(styles);
+    getComputedStyleStub = sandbox
+      .stub(win, 'getComputedStyle')
+      .returns(styles);
 
     const localizationService = new LocalizationService(win);
     registerServiceBuilder(win, 'localization-v01', () => localizationService);
@@ -77,8 +77,7 @@ describes.realWin('amp-story-consent', {amp: true}, env => {
 
   it('should parse the config', () => {
     storyConsent.buildCallback();
-    expect(storyConsent.storyConsentConfig_)
-        .to.deep.equal(defaultConfig);
+    expect(storyConsent.storyConsentConfig_).to.deep.equal(defaultConfig);
   });
 
   it('should require a story-consent title', () => {
@@ -142,13 +141,13 @@ describes.realWin('amp-story-consent', {amp: true}, env => {
 
     storyConsent.buildCallback();
 
-    const buttonEl = storyConsent.storyConsentEl_
-        .querySelector('.i-amphtml-story-consent-action-reject');
+    const buttonEl = storyConsent.storyConsentEl_.querySelector(
+      '.i-amphtml-story-consent-action-reject'
+    );
 
     // For some reason the win object provided by the test environment does not
     // return all the styles.
-    const styles = computedStyle(window, buttonEl);
-    expect(styles.display).to.equal('block');
+    expect(buttonEl).to.have.display('block');
   });
 
   it('should hide the decline button if onlyAccept is true', () => {
@@ -157,23 +156,23 @@ describes.realWin('amp-story-consent', {amp: true}, env => {
 
     storyConsent.buildCallback();
 
-    const buttonEl = storyConsent.storyConsentEl_
-        .querySelector('.i-amphtml-story-consent-action-reject');
+    const buttonEl = storyConsent.storyConsentEl_.querySelector(
+      '.i-amphtml-story-consent-action-reject'
+    );
 
     // For some reason the win object provided by the test environment does not
     // return all the styles.
-    const styles = computedStyle(window, buttonEl);
-    expect(styles.display).to.equal('none');
+    expect(buttonEl).to.have.display('none');
   });
 
   it('should hide the external link by default', () => {
     storyConsent.buildCallback();
 
-    const linkEl = storyConsent.storyConsentEl_
-        .querySelector('.i-amphtml-story-consent-external-link');
+    const linkEl = storyConsent.storyConsentEl_.querySelector(
+      '.i-amphtml-story-consent-external-link'
+    );
 
-    const styles = computedStyle(window, linkEl);
-    expect(styles.display).to.equal('none');
+    expect(linkEl).to.have.display('none');
   });
 
   it('should require an external link title if a URL is provided', () => {
@@ -217,23 +216,25 @@ describes.realWin('amp-story-consent', {amp: true}, env => {
 
     storyConsent.buildCallback();
 
-    const linkEl = storyConsent.storyConsentEl_
-        .querySelector('.i-amphtml-story-consent-external-link');
+    const linkEl = storyConsent.storyConsentEl_.querySelector(
+      '.i-amphtml-story-consent-external-link'
+    );
 
-    const styles = computedStyle(window, linkEl);
-    expect(styles.display).not.to.equal('none');
+    expect(linkEl).not.to.have.display('none');
   });
 
   it('should whitelist the <amp-consent> actions', () => {
-    const addToWhitelistStub =
-        sandbox.stub(storyConsent.actions_, 'addToWhitelist');
+    const addToWhitelistStub = sandbox.stub(
+      storyConsent.actions_,
+      'addToWhitelist'
+    );
 
     storyConsent.buildCallback();
 
     expect(addToWhitelistStub).to.have.callCount(3);
-    expect(addToWhitelistStub).to.have.been.calledWith('AMP-CONSENT.accept');
-    expect(addToWhitelistStub).to.have.been.calledWith('AMP-CONSENT.prompt');
-    expect(addToWhitelistStub).to.have.been.calledWith('AMP-CONSENT.reject');
+    expect(addToWhitelistStub).to.have.been.calledWith('AMP-CONSENT', 'accept');
+    expect(addToWhitelistStub).to.have.been.calledWith('AMP-CONSENT', 'prompt');
+    expect(addToWhitelistStub).to.have.been.calledWith('AMP-CONSENT', 'reject');
   });
 
   it('should broadcast the amp actions', () => {
@@ -256,17 +257,18 @@ describes.realWin('amp-story-consent', {amp: true}, env => {
   it('should render an accept button with the proper amp action', () => {
     storyConsent.buildCallback();
 
-    const buttonEl =
-        storyConsent.storyConsentEl_
-            .querySelector(`button[on="tap:${CONSENT_ID}.accept"]`);
+    const buttonEl = storyConsent.storyConsentEl_.querySelector(
+      `button[on="tap:${CONSENT_ID}.accept"]`
+    );
     expect(buttonEl).to.exist;
   });
 
   it('should set the consent ID in the store', () => {
     storyConsent.buildCallback();
 
-    expect(storyConsent.storeService_.get(StateProperty.CONSENT_ID))
-        .to.equal(CONSENT_ID);
+    expect(storyConsent.storeService_.get(StateProperty.CONSENT_ID)).to.equal(
+      CONSENT_ID
+    );
   });
 
   it('should set the font color to black if background is white', () => {
@@ -274,10 +276,12 @@ describes.realWin('amp-story-consent', {amp: true}, env => {
     getComputedStyleStub.returns(styles);
     storyConsent.buildCallback();
 
-    const buttonEl = storyConsent.storyConsentEl_
-        .querySelector('.i-amphtml-story-consent-action-accept');
-    expect(buttonEl.getAttribute('style'))
-        .to.equal('color: rgb(0, 0, 0) !important;');
+    const buttonEl = storyConsent.storyConsentEl_.querySelector(
+      '.i-amphtml-story-consent-action-accept'
+    );
+    expect(buttonEl.getAttribute('style')).to.equal(
+      'color: rgb(0, 0, 0) !important;'
+    );
   });
 
   it('should set the font color to white if background is black', () => {
@@ -285,9 +289,11 @@ describes.realWin('amp-story-consent', {amp: true}, env => {
     getComputedStyleStub.returns(styles);
     storyConsent.buildCallback();
 
-    const buttonEl = storyConsent.storyConsentEl_
-        .querySelector('.i-amphtml-story-consent-action-accept');
-    expect(buttonEl.getAttribute('style'))
-        .to.equal('color: rgb(255, 255, 255) !important;');
+    const buttonEl = storyConsent.storyConsentEl_.querySelector(
+      '.i-amphtml-story-consent-action-accept'
+    );
+    expect(buttonEl.getAttribute('style')).to.equal(
+      'color: rgb(255, 255, 255) !important;'
+    );
   });
 });

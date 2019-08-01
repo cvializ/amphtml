@@ -1,3 +1,10 @@
+---
+$category@: presentation
+formats:
+  - websites
+teaser:
+  text: Provides zooming and panning for arbitrary content.
+---
 <!---
 Copyright 2018 The AMP HTML Authors. All Rights Reserved.
 
@@ -14,25 +21,23 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-# <a name="amp-pan-zoom"></a> `amp-pan-zoom`
+# amp-pan-zoom
+
+Provides zooming and panning for arbitrary content.
 
 [TOC]
 
 <table>
   <tr>
-    <td width="40%"><strong>Description</strong></td>
-    <td>Provides zooming and panning for arbitrary content.</td>
-  </tr>
-  <tr>
     <td width="40%"><strong>Availability</strong></td>
-    <td><div><a href="https://www.ampproject.org/docs/reference/experimental.html">Experimental</a></td>
+    <td>Stable</td>
   </tr>
   <tr>
     <td><strong>Required Script</strong></td>
     <td><code>&lt;script async custom-element="amp-pan-zoom" src="https://cdn.ampproject.org/v0/amp-pan-zoom-0.1.js">&lt;/script></code></td>
   </tr>
     <tr>
-    <td><strong><a href="https://www.ampproject.org/docs/guides/responsive/control_layout.html#the-layout-attribute">Supported Layouts</a></strong></td>
+    <td><strong><a href="https://amp.dev/documentation/guides-and-tutorials/develop/style_and_layout/control_layout#the-layout-attribute">Supported Layouts</a></strong></td>
     <td>fill, fixed, fixed-height, responsive</td>
   </tr>
 </table>
@@ -55,24 +60,32 @@ The `<amp-pan-zoom>` component takes one child of arbitrary content and enables 
 
 ## Attributes
 
-##### max-scale (optional)
-Specifies a max zoom scale, which should be a positive number from 1 - 9.  The default value is 3.
-
-##### initial-scale (optional)
-
-Specifies a default zoom scale, which should be a positive number from 1 - 9. The default value is 1.
-
-##### initial-x, initial-y (optional)
-
-Specifies default translation coordinates, otherwise both are set to 0. The value is expected to be a whole number.
-
-##### reset-on-resize (optional)
-
-Refers to the ability to center  the image and set the image's scale back to 1. Setting this attribute causes the component to reset the zoomable content on resize of the image itself.
-
-##### common attributes
-
-This element includes [common attributes](https://www.ampproject.org/docs/reference/common_attributes) extended to AMP components.
+<table>
+  <tr>
+    <td width="40%"><strong>max-scale (optional)</strong></td>
+    <td>Specifies a max zoom scale, which should be a positive number from 1 - 9. The default value is 3.</td>
+  </tr>
+  <tr>
+    <td width="40%"><strong>initial-scale (optional)</strong></td>
+    <td>Specifies a default zoom scale, which should be a positive number from 1 - 9. The default value is 1.</td>
+  </tr>
+  <tr>
+    <td width="40%"><strong>initial-x, initial-y (optional)</strong></td>
+    <td>Specifies default translation coordinates, otherwise both are set to 0. The value is expected to be a whole number.</td>
+  </tr>
+  <tr>
+    <td width="40%"><strong>reset-on-resize (optional)</strong></td>
+    <td>Refers to the ability to center the image and set the image's scale back to 1. Setting this attribute causes the component to reset the zoomable content on resize of the image itself.</td>
+  </tr>
+  <tr>
+    <td width="40%"><strong>controls (optional)</strong></td>
+    <td>Shows default controls (zoom in / zoom out button) which can be customized via public CSS classes.</td>
+  </tr>
+  <tr>
+    <td width="40%"><strong>common attributes</strong></td>
+    <td>This element includes <a href="https://amp.dev/documentation/guides-and-tutorials/learn/common_attributes">common attributes</a> extended to AMP components.</td>
+  </tr>
+</table>
 
 ## Events and actions
 
@@ -108,5 +121,28 @@ The `transform` action takes `scale`, `x`, `y` as parameters and sets the CSS tr
 
 Assuming that there is an `<amp-pan-zoom>` component with the id `pan-zoom` on the page, a button with `on="tap:pan-zoom.transform(scale=3)"` will zoom to scale 3x at the center of the content, a button with `on="tap:pan-zoom.transform(scale=3, x=50, y=10)"` will first scale the content to 3x scale, and then shift the content 50 pixels towards the left, and 10 pixels upwards. Consider the `scale`, `x`, and `y` attributes directly applied to the content's CSS transform attribute after animation.
 
+## Customizing Buttons
+
+The following public CSS classes are exposed to allow customization for the zoom buttons:
+```
+.amp-pan-zoom-button
+.amp-pan-zoom-in-icon
+.amp-pan-zoom-out-icon
+```
+Use `.amp-pan-zoom-button` to customize the dimensions, positioning, background-color, border-radius of all buttons.
+Use `.amp-pan-zoom-in-icon` to customize the icon for the zoom in button.
+Use `.amp-pan-zoom-out-icon` to customize the icon for the zoom out button.
+You can also hide these buttons entirely and create your own using the `transform` action. To hide them, just apply
+
+```
+.amp-pan-zoom-button {
+  display: none;
+}
+```
+
+
 ## Validation
 See [amp-pan-zoom rules](https://github.com/ampproject/amphtml/blob/master/extensions/amp-pan-zoom/validator-amp-pan-zoom.protoascii) in the AMP validator specification.
+
+## Eligibile children tags
+See the [list](https://github.com/ampproject/amphtml/blob/e517ee7e58215ea8baaa04fa5c6b09bba9581549/extensions/amp-pan-zoom/0.1/amp-pan-zoom.js#L47) of eligibles children tags of `amp-pan-zoom`.

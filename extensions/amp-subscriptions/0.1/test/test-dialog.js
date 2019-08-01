@@ -20,13 +20,12 @@ import {Services} from '../../../../src/services';
 import {createElementWithAttributes} from '../../../../src/dom';
 import {installStylesForDoc} from '../../../../src/style-installer';
 
-
 describes.realWin('AmpSubscriptions Dialog', {amp: true}, env => {
   let win, doc, ampdoc;
   let dialog;
   let content;
   let vsync, viewport;
-  let updatePaddingSpy;
+  let addToFixedLayerSpy, updatePaddingSpy;
 
   beforeEach(() => {
     win = env.win;
@@ -36,6 +35,7 @@ describes.realWin('AmpSubscriptions Dialog', {amp: true}, env => {
     installStylesForDoc(ampdoc, CSS, () => {}, false, 'amp-subscriptions');
     vsync = Services.vsyncFor(ampdoc.win);
     viewport = Services.viewportForDoc(ampdoc);
+    addToFixedLayerSpy = sandbox.stub(viewport, 'addToFixedLayer');
     updatePaddingSpy = sandbox.stub(viewport, 'updatePaddingBottom');
     dialog = new Dialog(ampdoc);
     content = createElementWithAttributes(doc, 'div', {
@@ -44,82 +44,111 @@ describes.realWin('AmpSubscriptions Dialog', {amp: true}, env => {
   });
 
   it('should construct correctly', () => {
-    expect(dialog.getRoot().tagName.toLowerCase())
-        .to.equal('amp-subscriptions-dialog');
-    expect(dialog.getRoot().getAttribute('role'))
-        .to.equal('dialog');
+    expect(dialog.getRoot().tagName.toLowerCase()).to.equal(
+      'amp-subscriptions-dialog'
+    );
+    expect(dialog.getRoot().getAttribute('role')).to.equal('dialog');
     expect(dialog.getRoot().parentNode).to.equal(doc.body);
-    expect(getComputedStyle(dialog.closeButton_).display).to.equal('none');
+    expect(dialog.closeButton_).to.have.display('none');
 
+    expect(dialog.getRoot()).to.have.display('none');
     const styles = getComputedStyle(dialog.getRoot());
-    expect(styles.display).to.equal('none');
     expect(styles.position).to.equal('fixed');
   });
 
   it('should open content when invisible', () => {
     const promise = dialog.open(content, false);
-    expect(content.parentNode).to.equal(dialog.getRoot());
-    const styles = getComputedStyle(dialog.getRoot());
-    expect(styles.display).to.equal('none');
-    expect(dialog.isVisible()).to.be.true;
-    return vsync.mutatePromise(() => {}).then(() => {
-      // First vsync displays the dialog.
-      const styles = getComputedStyle(dialog.getRoot());
-      expect(styles.display).to.equal('block');
-      expect(styles.transform).to.contain('17');
-      return promise;
-    }).then(() => {
-      const styles = getComputedStyle(dialog.getRoot());
-      expect(styles.display).to.equal('block');
-      expect(styles.transform).to.not.contain('17');
-      expect(getComputedStyle(dialog.closeButton_).display).to.equal('none');
-      expect(updatePaddingSpy).to.be.calledOnce.calledWith(17);
-      expect(dialog.isVisible()).to.be.true;
-    });
+    expect(dialog.getRoot()).to.have.display('none');
+    return vsync
+      .mutatePromise(() => {})
+      .then(() => {
+        // First vsync displays the dialog.
+        expect(content.parentNode).to.equal(dialog.getRoot());
+        expect(dialog.isVisible()).to.be.true;
+        expect(dialog.getRoot()).to.have.display('block');
+        const styles = getComputedStyle(dialog.getRoot());
+        expect(styles.transform).to.contain('17');
+        return promise;
+      })
+      .then(() => vsync.mutatePromise(() => {}))
+      .then(() => {
+        expect(dialog.getRoot()).to.have.display('block');
+        const styles = getComputedStyle(dialog.getRoot());
+        expect(styles.transform).to.not.contain('17');
+        expect(dialog.closeButton_).to.have.display('none');
+        expect(updatePaddingSpy).to.be.calledOnce.calledWith(17);
+        // TODO(dvoytenko, #20608): add to fixed layer, once the SwG/FL
+        // conflict is resolved.
+        // expect(addToFixedLayerSpy).to.be.calledOnce
+        //     .calledWith(dialog.getRoot());
+        expect(addToFixedLayerSpy).to.not.be.called;
+        expect(dialog.isVisible()).to.be.true;
+      });
   });
 
   it('should re-open content when visible', () => {
     const content2 = createElementWithAttributes(doc, 'div', {
       style: 'height:21px',
     });
-    return dialog.open(content, false).then(() => {
-      expect(content.parentNode).to.equal(dialog.getRoot());
-      return dialog.open(content2, false);
-    }).then(() => {
-      expect(content2.parentNode).to.equal(dialog.getRoot());
-      expect(content.parentNode).to.be.null;
-      const styles = getComputedStyle(dialog.getRoot());
-      expect(styles.display).to.equal('block');
-      expect(styles.transform).to.not.contain('21');
-    });
+    const promise = dialog.open(content2, false);
+    return vsync
+      .mutatePromise(() => {})
+      .then(() => {
+        expect(content2.parentNode).to.equal(dialog.getRoot());
+        return promise;
+      })
+      .then(() => {
+        expect(content2.parentNode).to.equal(dialog.getRoot());
+        expect(content.parentNode).to.be.null;
+        expect(dialog.getRoot()).to.have.display('block');
+        const styles = getComputedStyle(dialog.getRoot());
+        expect(styles.transform).to.not.contain('21');
+      });
   });
 
   it('should close', () => {
-    return dialog.open(content, false).then(() => {
-      expect(content.parentNode).to.equal(dialog.getRoot());
-      const styles = getComputedStyle(dialog.getRoot());
-      expect(styles.display).to.equal('block');
-      return dialog.close();
-    }).then(() => {
-      const styles = getComputedStyle(dialog.getRoot());
-      expect(styles.display).to.equal('none');
-      expect(dialog.isVisible()).to.be.false;
-      expect(content.parentNode).to.equal(dialog.getRoot());
-      expect(dialog.getRoot().parentNode).to.equal(doc.body);
-    });
+    return dialog
+      .open(content, false)
+      .then(() => {
+        expect(content.parentNode).to.equal(dialog.getRoot());
+        expect(dialog.getRoot()).to.have.display('block');
+        return dialog.close();
+      })
+      .then(() => {
+        expect(dialog.getRoot()).to.have.display('none');
+        expect(dialog.isVisible()).to.be.false;
+        expect(content.parentNode).to.equal(dialog.getRoot());
+        expect(dialog.getRoot().parentNode).to.equal(doc.body);
+      });
+  });
+
+  it('should re-open after close', () => {
+    return dialog
+      .open(content, false)
+      .then(() => {
+        expect(dialog.isVisible()).to.be.true;
+        return dialog.close();
+      })
+      .then(() => {
+        expect(dialog.isVisible()).to.be.false;
+        return dialog.open(content, false);
+      })
+      .then(() => {
+        expect(dialog.isVisible()).to.be.true;
+      });
   });
 
   it('should show close button', () => {
     doc.body.classList.add('i-amphtml-subs-grant-yes');
     return dialog.open(content, true).then(() => {
-      expect(getComputedStyle(dialog.closeButton_).display).to.equal('block');
+      expect(dialog.closeButton_).to.have.display('block');
     });
   });
 
   it('should not show close button if content is not granted', () => {
     doc.body.classList.remove('i-amphtml-subs-grant-yes');
     return dialog.open(content, true).then(() => {
-      expect(getComputedStyle(dialog.closeButton_).display).to.equal('none');
+      expect(dialog.closeButton_).to.have.display('none');
     });
   });
 });

@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 import {Action, AmpStoryStoreService} from '../amp-story-store-service';
+import {LocalizationService} from '../../../../src/service/localization';
 import {ProgressBar} from '../progress-bar';
 import {Services} from '../../../../src/services';
 import {SystemLayer} from '../amp-story-system-layer';
 import {registerServiceBuilder} from '../../../../src/service';
 
-
 const NOOP = () => {};
-
 
 describes.fakeWin('amp-story system layer', {amp: true}, env => {
   let win;
@@ -35,6 +34,9 @@ describes.fakeWin('amp-story system layer', {amp: true}, env => {
 
     storeService = new AmpStoryStoreService(win);
     registerServiceBuilder(win, 'story-store', () => storeService);
+
+    const localizationService = new LocalizationService(win);
+    registerServiceBuilder(win, 'localization', () => localizationService);
 
     progressBarRoot = win.document.createElement('div');
 
@@ -54,8 +56,9 @@ describes.fakeWin('amp-story system layer', {amp: true}, env => {
   });
 
   it('should build UI', () => {
-    const initializeListeners =
-        sandbox.stub(systemLayer, 'initializeListeners_').callsFake(NOOP);
+    const initializeListeners = sandbox
+      .stub(systemLayer, 'initializeListeners_')
+      .callsFake(NOOP);
 
     const root = systemLayer.build();
 
@@ -81,5 +84,46 @@ describes.fakeWin('amp-story system layer', {amp: true}, env => {
     storeService.dispatch(Action.TOGGLE_AD, true);
 
     expect(systemLayer.getShadowRoot()).to.have.attribute('ad-showing');
+  });
+
+  it('should show that sound off on a page when muted', () => {
+    systemLayer.build();
+    storeService.dispatch(Action.TOGGLE_PAGE_HAS_AUDIO, true);
+    storeService.dispatch(Action.TOGGLE_MUTED, true);
+    expect(systemLayer.getShadowRoot()).to.have.attribute('muted');
+  });
+
+  it('should show that this page has no sound when unmuted', () => {
+    systemLayer.build();
+    storeService.dispatch(Action.TOGGLE_PAGE_HAS_AUDIO, false);
+    storeService.dispatch(Action.TOGGLE_MUTED, false);
+    expect(systemLayer.getShadowRoot()).to.not.have.attribute('muted');
+    expect(systemLayer.getShadowRoot()).to.not.have.attribute(
+      'i-amphtml-current-page-has-audio'
+    );
+  });
+
+  it('should show that the sound is on when unmuted', () => {
+    systemLayer.build();
+    storeService.dispatch(Action.TOGGLE_PAGE_HAS_AUDIO, true);
+    storeService.dispatch(Action.TOGGLE_MUTED, false);
+    expect(systemLayer.getShadowRoot()).to.not.have.attribute('muted');
+    expect(systemLayer.getShadowRoot()).to.have.attribute(
+      'i-amphtml-current-page-has-audio'
+    );
+  });
+
+  it('should show the sidebar control only if a sidebar exists', () => {
+    storeService.dispatch(Action.TOGGLE_HAS_SIDEBAR, true);
+    systemLayer.build();
+    expect(systemLayer.getShadowRoot()).to.have.attribute(
+      'i-amphtml-story-has-sidebar'
+    );
+  });
+
+  it('should hide system layer on SYSTEM_UI_IS_VISIBLE_STATE change', () => {
+    systemLayer.build();
+    storeService.dispatch(Action.TOGGLE_SYSTEM_UI_IS_VISIBLE, false);
+    expect(systemLayer.getShadowRoot()).to.have.class('i-amphtml-story-hidden');
   });
 });

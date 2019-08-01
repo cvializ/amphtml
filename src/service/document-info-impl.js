@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import {dict, map} from '../utils/object';
 import {
   getProxyServingType,
   getSourceUrl,
@@ -22,6 +21,7 @@ import {
   parseUrlDeprecated,
 } from '../url';
 import {isArray} from '../types';
+import {map} from '../utils/object';
 import {registerServiceBuilderForDoc} from '../service';
 
 /** @private @const {!Array<string>} */
@@ -39,6 +39,7 @@ const filteredLinkRels = ['prefetch', 'preload', 'preconnect', 'dns-prefetch'];
  *       contents (value).
  *     - replaceParams: A map object of extra query string parameter names (key)
  *       to corresponding values, used for custom analytics.
+ *       Null if not applicable.
  *
  * @typedef {{
  *   sourceUrl: string,
@@ -46,19 +47,18 @@ const filteredLinkRels = ['prefetch', 'preload', 'preconnect', 'dns-prefetch'];
  *   pageViewId: string,
  *   linkRels: !Object<string, string|!Array<string>>,
  *   metaTags: !Object<string, string|!Array<string>>,
- *   replaceParams: !Object<string, string|!Array<string>>
+ *   replaceParams: ?Object<string, string|!Array<string>>
  * }}
  */
 export let DocumentInfoDef;
 
-
 /**
  * @param {!Node|!./ampdoc-impl.AmpDoc} nodeOrDoc
+ * @return {*} TODO(#23582): Specify return type
  */
 export function installDocumentInfoServiceForDoc(nodeOrDoc) {
   return registerServiceBuilderForDoc(nodeOrDoc, 'documentInfo', DocInfo);
 }
-
 
 export class DocInfo {
   /**
@@ -80,8 +80,7 @@ export class DocInfo {
     const url = ampdoc.getUrl();
     const sourceUrl = getSourceUrl(url);
     const rootNode = ampdoc.getRootNode();
-    let canonicalUrl = rootNode && rootNode.AMP
-        && rootNode.AMP.canonicalUrl;
+    let canonicalUrl = rootNode && rootNode.AMP && rootNode.AMP.canonicalUrl;
     if (!canonicalUrl) {
       const canonicalTag = rootNode.querySelector('link[rel=canonical]');
       canonicalUrl = canonicalTag
@@ -93,7 +92,7 @@ export class DocInfo {
     const metaTags = getMetaTags(ampdoc.win.document);
     const replaceParams = getReplaceParams(ampdoc);
 
-    return this.info_ = {
+    return (this.info_ = {
       /** @return {string} */
       get sourceUrl() {
         return getSourceUrl(ampdoc.getUrl());
@@ -103,10 +102,9 @@ export class DocInfo {
       linkRels,
       metaTags,
       replaceParams,
-    };
+    });
   }
 }
-
 
 /**
  * Returns a relatively low entropy random string.
@@ -193,17 +191,23 @@ function getMetaTags(doc) {
 
 /**
  * Attempts to retrieve extra parameters from the "amp_r" query param,
- * returning an empty result if invalid.
+ * returning null if invalid.
  * @param {!./ampdoc-impl.AmpDoc} ampdoc
- * @return {!JsonObject<string, string|!Array<string>>}
+ * @return {?JsonObject<string, string|!Array<string>>}
  */
 function getReplaceParams(ampdoc) {
   // The "amp_r" parameter is only supported for ads.
-  if (!ampdoc.isSingleDoc() ||
-      getProxyServingType(ampdoc.win.location.href) != 'a') {
-    return dict();
+  if (
+    !ampdoc.isSingleDoc() ||
+    getProxyServingType(ampdoc.win.location.href) != 'a'
+  ) {
+    return null;
   }
   const url = parseUrlDeprecated(ampdoc.win.location.href);
   const replaceRaw = parseQueryString(url.search)['amp_r'];
+  if (replaceRaw === undefined) {
+    // Differentiate the case between empty replace params and invalid result
+    return null;
+  }
   return parseQueryString(replaceRaw);
 }

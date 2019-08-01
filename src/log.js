@@ -16,7 +16,12 @@
 
 import {getMode} from './mode';
 import {getModeObject} from './mode-object';
-import {isEnumValue} from './types';
+import {internalRuntimeVersion} from './internal-version';
+import {isArray, isEnumValue} from './types';
+import {once} from './utils/function';
+import {urls} from './config';
+
+const noop = () => {};
 
 /**
  * Triple zero width space.
@@ -29,14 +34,12 @@ import {isEnumValue} from './types';
  */
 export const USER_ERROR_SENTINEL = '\u200B\u200B\u200B';
 
-
 /**
  * Four zero width space.
  *
  * @const {string}
  */
 export const USER_ERROR_EMBED_SENTINEL = '\u200B\u200B\u200B\u200B';
-
 
 /**
  * @param {string} message
@@ -53,7 +56,6 @@ export function isUserErrorMessage(message) {
 export function isUserErrorEmbed(message) {
   return message.indexOf(USER_ERROR_EMBED_SENTINEL) >= 0;
 }
-
 
 /**
  * @enum {number}
@@ -90,6 +92,30 @@ export function overrideLogLevel(level) {
 }
 
 /**
+ * URL that displays a log message on amp.dev.
+ * Query params should be appended postfacto.
+ * This prefixes `internalRuntimeVersion` with the `01` channel signifier (for prod.)
+ * It doesn't matter if this gets the prod table for a different channel, since message
+ * tables are guaranteed not to divert as long as `internalRuntimeVersion` is the same.
+ * @return {string}
+ */
+const externalMessagesUrl = () =>
+  `https://log.amp.dev/?v=01${encodeURIComponent(internalRuntimeVersion())}&`;
+
+/**
+ * URL to simple log messages table JSON file, which contains an Object<string, string>
+ * which maps message id to full message template.
+ * This prefixes `internalRuntimeVersion` with the `01` channel signifier (for prod.)
+ * It doesn't matter if this gets the prod table for a different channel, since message
+ * tables are guaranteed not to divert as long as `internalRuntimeVersion` is the same.
+ * @return {string}
+ */
+const externalMessagesSimpleTableUrl = () =>
+  `${urls.cdn}/rtv/01${encodeURIComponent(
+    internalRuntimeVersion()
+  )}/log-messages.simple.json`;
+
+/**
  * Logging class. Use of sentinel string instead of a boolean to check user/dev
  * errors because errors could be rethrown by some native code as a new error,
  * and only a message would survive. Also, some browser don’t support a 5th
@@ -111,13 +137,13 @@ export class Log {
    * @param {function(!./mode.ModeDef):!LogLevel} levelFunc
    * @param {string=} opt_suffix
    */
-  constructor(win, levelFunc, opt_suffix) {
+  constructor(win, levelFunc, opt_suffix = '') {
     /**
      * In tests we use the main test window instead of the iframe where
      * the tests runs because only the former is relayed to the console.
      * @const {!Window}
      */
-    this.win = (getMode().test && win.AMP_TEST_IFRAME) ? win.parent : win;
+    this.win = getMode().test && win.AMP_TEST_IFRAME ? win.parent : win;
 
     /** @private @const {function(!./mode.ModeDef):!LogLevel} */
     this.levelFunc_ = levelFunc;
@@ -126,7 +152,21 @@ export class Log {
     this.level_ = this.defaultLevel_();
 
     /** @private @const {string} */
-    this.suffix_ = opt_suffix || '';
+    this.suffix_ = opt_suffix;
+
+    /** @private {?JsonObject} */
+    this.messages_ = null;
+
+    this.fetchExternalMessagesOnce_ = once(() => {
+      win
+        .fetch(externalMessagesSimpleTableUrl())
+        .then(response => response.json(), noop)
+        .then(opt_messages => {
+          if (opt_messages) {
+            this.messages_ = /** @type {!JsonObject} */ (opt_messages);
+          }
+        });
+    });
   }
 
   /**
@@ -134,7 +174,7 @@ export class Log {
    * @private
    */
   getLevel_() {
-    return (levelOverride_ !== undefined) ? levelOverride_ : this.level_;
+    return levelOverride_ !== undefined ? levelOverride_ : this.level_;
   }
 
   /**
@@ -181,10 +221,11 @@ export class Log {
       } else if (level == 'WARN') {
         fn = this.win.console.warn || fn;
       }
+      const args = this.maybeExpandArguments_(messages);
       if (getMode().localDev) {
-        messages.unshift('[' + tag + ']');
+        args.unshift('[' + tag + ']');
       }
-      fn.apply(this.win.console, messages);
+      fn.apply(this.win.console, args);
     }
   }
 
@@ -241,8 +282,10 @@ export class Log {
     if (this.getLevel_() >= LogLevel.ERROR) {
       this.msg_(tag, 'ERROR', Array.prototype.slice.call(arguments, 1));
     } else {
-      const error = createErrorVargs.apply(null,
-          Array.prototype.slice.call(arguments, 1));
+      const error = createErrorVargs.apply(
+        null,
+        Array.prototype.slice.call(arguments, 1)
+      );
       this.prepareError_(error);
       return error;
     }
@@ -312,29 +355,48 @@ export class Log {
    *   elements in an array. When e.g. passed to console.error this yields
    *   native displays of things like HTML elements.
    *
+   * NOTE: for an explanation of the tempate R implementation see
+   * https://github.com/google/closure-library/blob/08858804/closure/goog/asserts/asserts.js#L192-L213
+   *
    * @param {T} shouldBeTrueish The value to assert. The assert fails if it does
    *     not evaluate to true.
-   * @param {string=} opt_message The assertion message
+   * @param {!Array|string=} opt_message The assertion message
    * @param {...*} var_args Arguments substituted into %s in the message.
-   * @return {T} The value of shouldBeTrueish.
+   * @return {R} The value of shouldBeTrueish.
+   * @throws {!Error} When `value` is `null` or `undefined`.
    * @template T
-   * eslint "google-camelcase/google-camelcase": 0
+   * @template R :=
+   *     mapunion(T, (V) =>
+   *         cond(eq(V, 'null'),
+   *             none(),
+   *             cond(eq(V, 'undefined'),
+   *                 none(),
+   *                 V)))
+   *  =:
+   * @closurePrimitive {asserts.matchesReturn}
    */
   assert(shouldBeTrueish, opt_message, var_args) {
     let firstElement;
+    if (isArray(opt_message)) {
+      return this.assert(
+        shouldBeTrueish,
+        this.expandLogMessage_(/** @type {!Array} */ (opt_message))
+      );
+    }
     if (!shouldBeTrueish) {
       const message = opt_message || 'Assertion failed';
       const splitMessage = message.split('%s');
       const first = splitMessage.shift();
       let formatted = first;
       const messageArray = [];
+      let i = 2;
       pushIfNonEmpty(messageArray, first);
-      for (let i = 2; i < arguments.length; i++) {
-        const val = arguments[i];
+      while (splitMessage.length > 0) {
+        const nextConstant = splitMessage.shift();
+        const val = arguments[i++];
         if (val && val.tagName) {
           firstElement = val;
         }
-        const nextConstant = splitMessage.shift();
         messageArray.push(val);
         pushIfNonEmpty(messageArray, nextConstant.trim());
         formatted += toString(val) + nextConstant;
@@ -357,15 +419,18 @@ export class Log {
    * Otherwise see `assert` for usage
    *
    * @param {*} shouldBeElement
-   * @param {string=} opt_message The assertion message
+   * @param {!Array|string=} opt_message The assertion message
    * @return {!Element} The value of shouldBeTrueish.
    * @template T
-   * eslint "google-camelcase/google-camelcase": 2
+   * @closurePrimitive {asserts.matchesReturn}
    */
   assertElement(shouldBeElement, opt_message) {
     const shouldBeTrueish = shouldBeElement && shouldBeElement.nodeType == 1;
-    this.assert(shouldBeTrueish, (opt_message || 'Element expected') + ': %s',
-        shouldBeElement);
+    this.assert(
+      shouldBeTrueish,
+      (opt_message || 'Element expected') + ': %s',
+      shouldBeElement
+    );
     return /** @type {!Element} */ (shouldBeElement);
   }
 
@@ -376,13 +441,16 @@ export class Log {
    * For more details see `assert`.
    *
    * @param {*} shouldBeString
-   * @param {string=} opt_message The assertion message
+   * @param {!Array|string=} opt_message The assertion message
    * @return {string} The string value. Can be an empty string.
-   * eslint "google-camelcase/google-camelcase": 2
+   * @closurePrimitive {asserts.matchesReturn}
    */
   assertString(shouldBeString, opt_message) {
-    this.assert(typeof shouldBeString == 'string',
-        (opt_message || 'String expected') + ': %s', shouldBeString);
+    this.assert(
+      typeof shouldBeString == 'string',
+      (opt_message || 'String expected') + ': %s',
+      shouldBeString
+    );
     return /** @type {string} */ (shouldBeString);
   }
 
@@ -393,14 +461,36 @@ export class Log {
    * For more details see `assert`.
    *
    * @param {*} shouldBeNumber
-   * @param {string=} opt_message The assertion message
+   * @param {!Array|string=} opt_message The assertion message
    * @return {number} The number value. The allowed values include `0`
    *   and `NaN`.
+   * @closurePrimitive {asserts.matchesReturn}
    */
   assertNumber(shouldBeNumber, opt_message) {
-    this.assert(typeof shouldBeNumber == 'number',
-        (opt_message || 'Number expected') + ': %s', shouldBeNumber);
+    this.assert(
+      typeof shouldBeNumber == 'number',
+      (opt_message || 'Number expected') + ': %s',
+      shouldBeNumber
+    );
     return /** @type {number} */ (shouldBeNumber);
+  }
+
+  /**
+   * Throws an error if the first argument is not an array.
+   * The array can be empty.
+   *
+   * @param {*} shouldBeArray
+   * @param {!Array|string=} opt_message The assertion message
+   * @return {!Array} The array value
+   * @closurePrimitive {asserts.matchesReturn}
+   */
+  assertArray(shouldBeArray, opt_message) {
+    this.assert(
+      Array.isArray(shouldBeArray),
+      (opt_message || 'Array expected') + ': %s',
+      shouldBeArray
+    );
+    return /** @type {!Array} */ (shouldBeArray);
   }
 
   /**
@@ -409,12 +499,16 @@ export class Log {
    * For more details see `assert`.
    *
    * @param {*} shouldBeBoolean
-   * @param {string=} opt_message The assertion message
+   * @param {!Array|string=} opt_message The assertion message
    * @return {boolean} The boolean value.
+   * @closurePrimitive {asserts.matchesReturn}
    */
   assertBoolean(shouldBeBoolean, opt_message) {
-    this.assert(!!shouldBeBoolean === shouldBeBoolean,
-        (opt_message || 'Boolean expected') + ': %s', shouldBeBoolean);
+    this.assert(
+      !!shouldBeBoolean === shouldBeBoolean,
+      (opt_message || 'Boolean expected') + ': %s',
+      shouldBeBoolean
+    );
     return /** @type {boolean} */ (shouldBeBoolean);
   }
 
@@ -427,15 +521,13 @@ export class Log {
    * @param {string=} opt_enumName
    * @return {T}
    * @template T
-   * eslint "google-camelcase/google-camelcase": 2
+   * @closurePrimitive {asserts.matchesReturn}
    */
   assertEnumValue(enumObj, s, opt_enumName) {
     if (isEnumValue(enumObj, s)) {
       return s;
     }
-    this.assert(false,
-        'Unknown %s value: "%s"',
-        opt_enumName || 'enum', s);
+    this.assert(false, 'Unknown %s value: "%s"', opt_enumName || 'enum', s);
   }
 
   /**
@@ -454,6 +546,53 @@ export class Log {
       error.message = error.message.replace(USER_ERROR_SENTINEL, '');
     }
   }
+
+  /**
+   * @param {!Array} args
+   * @return {!Array}
+   * @private
+   */
+  maybeExpandArguments_(args) {
+    if (isArray(args[0])) {
+      return [this.expandLogMessage_(/** @type {!Array} */ (args[0]))];
+    }
+    return args;
+  }
+
+  /**
+   * Either redirects a pair of (errorId, ...args) to a URL where the full
+   * message is displayed, or displays it from a fetched table.
+   *
+   * This method is used by the output of the `transform-log-methods` babel
+   * plugin. It should not be used directly. Use the (*error|assert*|info|warn)
+   * methods instead.
+   *
+   * @param {!Array} parts
+   * @return {string}
+   * @private
+   */
+  expandLogMessage_(parts) {
+    // First value should exist.
+    const id = parts[0];
+    // Best effort fetch of message template table.
+    // Since this is async, the first few logs might be indirected to a URL even
+    // if in development mode. Message table is ~small so this should be a short
+    // gap.
+    if (getMode(this.win).development && !this.messages_) {
+      this.fetchExternalMessagesOnce_();
+    }
+    const args = parts.slice(1);
+    if (this.messages_ && id in this.messages_) {
+      const template = this.messages_[id];
+      const {message} = createErrorVargs.apply(null, [template].concat(args));
+      return message;
+    }
+    const url = args.reduce(
+      (prefix, arg) => `${prefix}&s[]=${encodeURIComponent(toString(arg))}`,
+      `${externalMessagesUrl()}id=${encodeURIComponent(id)}`
+    );
+    return `More info at ${url}`;
+  }
 }
 
 /**
@@ -467,7 +606,6 @@ function toString(val) {
   }
   return /** @type {string} */ (val);
 }
-
 
 /**
  * @param {!Array} array
@@ -485,22 +623,19 @@ function pushIfNonEmpty(array, val) {
  * @return {!Error};
  */
 export function duplicateErrorIfNecessary(error) {
-  const {message} = error;
-  const test = String(Math.random());
-  error.message = test;
-
-  if (error.message === test) {
-    error.message = message;
+  const messageProperty = Object.getOwnPropertyDescriptor(error, 'message');
+  if (messageProperty && messageProperty.writable) {
     return error;
   }
 
-  const e = new Error(error.message);
+  const {message, stack} = error;
+  const e = new Error(message);
   // Copy all the extraneous things we attach.
   for (const prop in error) {
     e[prop] = error[prop];
   }
   // Ensure these are copied.
-  e.stack = error.stack;
+  e.stack = stack;
   return e;
 }
 
@@ -532,7 +667,6 @@ export function createErrorVargs(var_args) {
   return error;
 }
 
-
 /**
  * Rethrows the error without terminating the current context. This preserves
  * whether the original error designation is a user error or a dev error.
@@ -547,17 +681,16 @@ export function rethrowAsync(var_args) {
   });
 }
 
-
 /**
  * Cache for logs. We do not use a Service since the service module depends
  * on Log and closure literally can't even.
  * @type {{user: ?Log, dev: ?Log, userForEmbed: ?Log}}
  */
-self.log = (self.log || {
+self.log = self.log || {
   user: null,
   dev: null,
   userForEmbed: null,
-});
+};
 
 const logs = self.log;
 
@@ -615,7 +748,7 @@ export function user(opt_element) {
     if (logs.userForEmbed) {
       return logs.userForEmbed;
     }
-    return logs.userForEmbed = getUserLogger(USER_ERROR_EMBED_SENTINEL);
+    return (logs.userForEmbed = getUserLogger(USER_ERROR_EMBED_SENTINEL));
   }
 }
 
@@ -628,13 +761,17 @@ function getUserLogger(suffix) {
   if (!logConstructor) {
     throw new Error('failed to call initLogConstructor');
   }
-  return new logConstructor(self, mode => {
-    const logNum = parseInt(mode.log, 10);
-    if (mode.development || logNum >= 1) {
-      return LogLevel.FINE;
-    }
-    return LogLevel.WARN;
-  }, suffix);
+  return new logConstructor(
+    self,
+    mode => {
+      const logNum = parseInt(mode.log, 10);
+      if (mode.development || logNum >= 1) {
+        return LogLevel.FINE;
+      }
+      return LogLevel.WARN;
+    },
+    suffix
+  );
 }
 
 /**
@@ -656,7 +793,7 @@ export function dev() {
   if (!logConstructor) {
     throw new Error('failed to call initLogConstructor');
   }
-  return logs.dev = new logConstructor(self, mode => {
+  return (logs.dev = new logConstructor(self, mode => {
     const logNum = parseInt(mode.log, 10);
     if (logNum >= 3) {
       return LogLevel.FINE;
@@ -665,7 +802,7 @@ export function dev() {
       return LogLevel.INFO;
     }
     return LogLevel.OFF;
-  });
+  }));
 }
 
 /**
@@ -678,4 +815,143 @@ export function isFromEmbed(win, opt_element) {
     return false;
   }
   return opt_element.ownerDocument.defaultView != win;
+}
+
+/**
+ * Throws an error if the first argument isn't trueish.
+ *
+ * Supports argument substitution into the message via %s placeholders.
+ *
+ * Throws an error object that has two extra properties:
+ * - associatedElement: This is the first element provided in the var args.
+ *   It can be used for improved display of error messages.
+ * - messageArray: The elements of the substituted message as non-stringified
+ *   elements in an array. When e.g. passed to console.error this yields
+ *   native displays of things like HTML elements.
+ *
+ * NOTE: for an explanation of the tempate R implementation see
+ * https://github.com/google/closure-library/blob/08858804/closure/goog/asserts/asserts.js#L192-L213
+ *
+ * @param {T} shouldBeTrueish The value to assert. The assert fails if it does
+ *     not evaluate to true.
+ * @param {!Array|string=} opt_message The assertion message
+ * @param {*=} opt_1 Optional argument (Var arg as individual params for better
+ * @param {*=} opt_2 Optional argument inlining)
+ * @param {*=} opt_3 Optional argument
+ * @param {*=} opt_4 Optional argument
+ * @param {*=} opt_5 Optional argument
+ * @param {*=} opt_6 Optional argument
+ * @param {*=} opt_7 Optional argument
+ * @param {*=} opt_8 Optional argument
+ * @param {*=} opt_9 Optional argument
+ * @return {R} The value of shouldBeTrueish.
+ * @template T
+ * @template R :=
+ *     mapunion(T, (V) =>
+ *         cond(eq(V, 'null'),
+ *             none(),
+ *             cond(eq(V, 'undefined'),
+ *                 none(),
+ *                 V)))
+ *  =:
+ * @throws {!Error} When `value` is `null` or `undefined`.
+ * @closurePrimitive {asserts.matchesReturn}
+ */
+export function devAssert(
+  shouldBeTrueish,
+  opt_message,
+  opt_1,
+  opt_2,
+  opt_3,
+  opt_4,
+  opt_5,
+  opt_6,
+  opt_7,
+  opt_8,
+  opt_9
+) {
+  if (getMode().minified) {
+    return shouldBeTrueish;
+  }
+  return dev()./*Orig call*/ assert(
+    shouldBeTrueish,
+    opt_message,
+    opt_1,
+    opt_2,
+    opt_3,
+    opt_4,
+    opt_5,
+    opt_6,
+    opt_7,
+    opt_8,
+    opt_9
+  );
+}
+
+/**
+ * Throws an error if the first argument isn't trueish.
+ *
+ * Supports argument substitution into the message via %s placeholders.
+ *
+ * Throws an error object that has two extra properties:
+ * - associatedElement: This is the first element provided in the var args.
+ *   It can be used for improved display of error messages.
+ * - messageArray: The elements of the substituted message as non-stringified
+ *   elements in an array. When e.g. passed to console.error this yields
+ *   native displays of things like HTML elements.
+ *
+ * NOTE: for an explanation of the tempate R implementation see
+ * https://github.com/google/closure-library/blob/08858804/closure/goog/asserts/asserts.js#L192-L213
+ *
+ * @param {T} shouldBeTrueish The value to assert. The assert fails if it does
+ *     not evaluate to true.
+ * @param {!Array|string=} opt_message The assertion message
+ * @param {*=} opt_1 Optional argument (Var arg as individual params for better
+ * @param {*=} opt_2 Optional argument inlining)
+ * @param {*=} opt_3 Optional argument
+ * @param {*=} opt_4 Optional argument
+ * @param {*=} opt_5 Optional argument
+ * @param {*=} opt_6 Optional argument
+ * @param {*=} opt_7 Optional argument
+ * @param {*=} opt_8 Optional argument
+ * @param {*=} opt_9 Optional argument
+ * @return {R} The value of shouldBeTrueish.
+ * @template T
+ * @template R :=
+ *     mapunion(T, (V) =>
+ *         cond(eq(V, 'null'),
+ *             none(),
+ *             cond(eq(V, 'undefined'),
+ *                 none(),
+ *                 V)))
+ *  =:
+ * @throws {!Error} When `value` is `null` or `undefined`.
+ * @closurePrimitive {asserts.matchesReturn}
+ */
+export function userAssert(
+  shouldBeTrueish,
+  opt_message,
+  opt_1,
+  opt_2,
+  opt_3,
+  opt_4,
+  opt_5,
+  opt_6,
+  opt_7,
+  opt_8,
+  opt_9
+) {
+  return user()./*Orig call*/ assert(
+    shouldBeTrueish,
+    opt_message,
+    opt_1,
+    opt_2,
+    opt_3,
+    opt_4,
+    opt_5,
+    opt_6,
+    opt_7,
+    opt_8,
+    opt_9
+  );
 }

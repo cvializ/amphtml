@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import {KeyCodes} from '../../../src/utils/key-codes';
+import {Keys} from '../../../src/utils/key-codes';
 import {Services} from '../../../src/services';
 
 /**
  * @abstract
  */
 export class BaseCarousel extends AMP.BaseElement {
-
   /** @param {!AmpElement} element */
   constructor(element) {
     super(element);
@@ -38,8 +37,8 @@ export class BaseCarousel extends AMP.BaseElement {
   /** @override */
   buildCallback() {
     const input = Services.inputFor(this.win);
-    this.showControls_ = input.isMouseDetected() ||
-        this.element.hasAttribute('controls');
+    this.showControls_ =
+      input.isMouseDetected() || this.element.hasAttribute('controls');
 
     if (this.showControls_) {
       this.element.classList.add('i-amphtml-carousel-has-controls');
@@ -69,15 +68,16 @@ export class BaseCarousel extends AMP.BaseElement {
    * Builds a carousel button for next/prev.
    * @param {string} className
    * @param {function()} onInteraction
+   * @return {?Element}
    */
   buildButton(className, onInteraction) {
     const button = this.element.ownerDocument.createElement('div');
     button.tabIndex = 0;
     button.classList.add('amp-carousel-button');
     button.classList.add(className);
-    button.setAttribute('role', 'button');
+    button.setAttribute('role', this.buttonsAriaRole());
     button.onkeydown = event => {
-      if (event.keyCode == KeyCodes.ENTER || event.keyCode == KeyCodes.SPACE) {
+      if (event.key == Keys.ENTER || event.key == Keys.SPACE) {
         if (!event.defaultPrevented) {
           event.preventDefault();
           onInteraction();
@@ -87,6 +87,17 @@ export class BaseCarousel extends AMP.BaseElement {
     button.onclick = onInteraction;
 
     return button;
+  }
+
+  /**
+   * The ARIA role for the controls. Either `button` or `presentation` based
+   * on usage.
+   * @return {string}
+   * @protected
+   */
+  buttonsAriaRole() {
+    // Subclasses may override.
+    return 'button';
   }
 
   /**
@@ -101,6 +112,7 @@ export class BaseCarousel extends AMP.BaseElement {
     this.nextButton_ = this.buildButton('amp-carousel-button-next', () => {
       this.interactionNext();
     });
+    this.updateButtonTitles();
     this.element.appendChild(this.nextButton_);
   }
 
@@ -174,9 +186,13 @@ export class BaseCarousel extends AMP.BaseElement {
         this.mutateElement(() => {
           this.element.classList.remove(className);
           this.prevButton_.classList.toggle(
-              'i-amphtml-screen-reader', !this.showControls_);
+            'i-amphtml-screen-reader',
+            !this.showControls_
+          );
           this.nextButton_.classList.toggle(
-              'i-amphtml-screen-reader', !this.showControls_);
+            'i-amphtml-screen-reader',
+            !this.showControls_
+          );
         });
       }, 4000);
     });
@@ -199,8 +215,10 @@ export class BaseCarousel extends AMP.BaseElement {
    * @protected
    */
   getNextButtonTitle() {
-    return this.element.getAttribute('data-next-button-aria-label')
-        || 'Next item in carousel';
+    return (
+      this.element.getAttribute('data-next-button-aria-label') ||
+      'Next item in carousel'
+    );
   }
 
   /**
@@ -208,8 +226,10 @@ export class BaseCarousel extends AMP.BaseElement {
    * @protected
    */
   getPrevButtonTitle() {
-    return this.element.getAttribute('data-prev-button-aria-label')
-        || 'Previous item in carousel';
+    return (
+      this.element.getAttribute('data-prev-button-aria-label') ||
+      'Previous item in carousel'
+    );
   }
 
   /** @override */

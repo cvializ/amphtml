@@ -26,7 +26,7 @@ wonder why we're not just writing Javascript directly, or why we're
 not encoding our rules in JSON or YAML or even, gasp, XML? Besides the
 additional type safety that we gain from our approach, it allows us to
 share the rule specifications, error codes, etc. between multiple
-validator implemenations, including an implementation in C++. This
+validator implementations, including an implementation in C++. This
 makes it much easier to keep otherwise likely divergent behavior in
 sync.
 """
@@ -659,12 +659,12 @@ def PrintObject(descriptor, msg, registry, out):
   # set constructor instantiation.
   if fields:
     fields_string = '{' + ','.join(fields) + '}'
-    out.Line('var %s = /** @type {!%s} */ (Object.assign(new %s(%s), %s));' %
+    out.Line('let %s = /** @type {!%s} */ (oa(new %s(%s), %s));' %
              (this_message_reference, msg.DESCRIPTOR.full_name,
               msg.DESCRIPTOR.full_name, ','.join(constructor_arg_values),
               fields_string))
   else:
-    out.Line('var %s = new %s(%s);' %
+    out.Line('let %s = new %s(%s);' %
              (this_message_reference, msg.DESCRIPTOR.full_name,
               ','.join(constructor_arg_values)))
 
@@ -816,6 +816,9 @@ def GenerateValidatorGeneratedJs(specfile, validator_pb2, generate_proto_only,
     out.Line(' * @return {!%s}' % rules.DESCRIPTOR.full_name)
     out.Line(' */')
     out.Line('amp.validator.createRules = function() {')
+    # Shorthand object.assign to reduce the binary size of the validator rules
+    # generated.
+    out.Line('const oa = Object.assign;')
     out.PushIndent(2)
     PrintObject(descriptor, rules, registry, out)
 
@@ -891,3 +894,26 @@ def GenerateValidatorGeneratedJs(specfile, validator_pb2, generate_proto_only,
     out.PopIndent()
     out.Line('}')
     out.Line('')
+
+
+def GenerateValidatorGeneratedJson(specfile, validator_pb2, text_format,
+                                   json_format, out):
+  """Generates a JSON file with definitions from validator.protoascii.
+
+  This method reads the specfile and emits JSON to out.
+
+  Args:
+    specfile: Path to validator.protoascii, the specfile to generate
+        Javascript from.
+    validator_pb2: The proto2 Python module generated from validator.proto.
+    text_format: The text_format module from the protobuf package, e.g.
+        google.protobuf.text_format.
+    json_format: The json_format module from the protobuf package, e.g.
+        google.protobuf.json_format.
+    out: a list of lines to output (without the newline characters), to
+        which this function will append.
+  """
+
+  rules = validator_pb2.ValidatorRules()
+  text_format.Merge(open(specfile).read(), rules)
+  out.append(json_format.MessageToJson(rules))

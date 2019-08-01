@@ -15,16 +15,19 @@
  */
 
 import {
+  BIND_PREFIX,
   BLACKLISTED_TAGS,
+  EMAIL_WHITELISTED_AMP_TAGS,
   TRIPLE_MUSTACHE_WHITELISTED_TAGS,
   WHITELISTED_ATTRS,
   WHITELISTED_ATTRS_BY_TAGS,
   WHITELISTED_TARGETS,
   isValidAttr,
-  rewriteAttributeValue,
-} from './purifier';
-import {dict, map} from './utils/object';
+} from './sanitation';
+import {dict} from './utils/object';
 import {htmlSanitizer} from '../third_party/caja/html-sanitizer';
+import {isAmp4Email} from './format';
+import {rewriteAttributeValue} from './url-rewrite';
 import {startsWith} from './string';
 import {user} from './log';
 
@@ -64,6 +67,12 @@ const SELF_CLOSING_TAGS = dict({
 const WHITELISTED_ATTR_PREFIX_REGEX = /^(data-|aria-)|^role$/i;
 
 /**
+ * Monotonically increasing counter used for keying nodes.
+ * @private {number}
+ */
+let KEY_COUNTER = 0;
+
+/**
  * Sanitizes the provided HTML.
  *
  * This function expects the HTML to be already pre-sanitized and thus it does
@@ -71,19 +80,14 @@ const WHITELISTED_ATTR_PREFIX_REGEX = /^(data-|aria-)|^role$/i;
  * cases, such as <SCRIPT>, <STYLE>, <IFRAME>.
  *
  * @param {string} html
+ * @param {!Document} doc
+ * @param {boolean=} diffing
  * @return {string}
  */
-export function sanitizeHtml(html) {
-  return sanitizeWithCaja(html);
-}
-
-/**
- * @param {string} html
- * @return {string}
- */
-function sanitizeWithCaja(html) {
+export function sanitizeHtml(html, doc, diffing) {
   const tagPolicy = htmlSanitizer.makeTagPolicy(parsed =>
-    parsed.getScheme() === 'https' ? parsed : null);
+    parsed.getScheme() === 'https' ? parsed : null
+  );
   const output = [];
   let ignore = 0;
 
@@ -95,7 +99,9 @@ function sanitizeWithCaja(html) {
 
   // No Caja support for <script> or <svg>.
   const cajaBlacklistedTags = Object.assign(
-      {'script': true, 'svg': true}, BLACKLISTED_TAGS);
+    {'script': true, 'svg': true},
+    BLACKLISTED_TAGS
+  );
 
   const parser = htmlSanitizer.makeSaxParser({
     'startTag': function(tagName, attribs) {
@@ -105,37 +111,56 @@ function sanitizeWithCaja(html) {
         }
         return;
       }
-      const isBinding = map();
+      const isAmpElement = startsWith(tagName, 'amp-');
       // Preprocess "binding" attributes, e.g. [attr], by stripping enclosing
       // brackets before custom validation and restoring them afterwards.
+      const bindingAttribs = [];
       for (let i = 0; i < attribs.length; i += 2) {
         const attr = attribs[i];
-        if (attr && attr[0] == '[' && attr[attr.length - 1] == ']') {
-          isBinding[i] = true;
+        if (!attr) {
+          continue;
+        }
+        const classicBinding = attr[0] == '[' && attr[attr.length - 1] == ']';
+        const alternativeBinding = startsWith(attr, BIND_PREFIX);
+        if (classicBinding) {
           attribs[i] = attr.slice(1, -1);
         }
+        if (classicBinding || alternativeBinding) {
+          bindingAttribs.push(i);
+        }
       }
+
       if (cajaBlacklistedTags[tagName]) {
         ignore++;
-      } else if (!startsWith(tagName, 'amp-')) {
+      } else if (isAmpElement) {
+        // Enforce AMP4EMAIL tag whitelist at runtime.
+        if (isAmp4Email(doc) && !EMAIL_WHITELISTED_AMP_TAGS[tagName]) {
+          ignore++;
+        }
+      } else {
         // Ask Caja to validate the element as well.
         // Use the resulting properties.
         const savedAttribs = attribs.slice(0);
-        const scrubbed = tagPolicy(tagName, attribs);
+        const scrubbed = /** @type {!JsonObject} */ (tagPolicy(
+          tagName,
+          attribs
+        ));
         if (!scrubbed) {
           ignore++;
         } else {
-          attribs = scrubbed.attribs;
+          attribs = scrubbed['attribs'];
           // Restore some of the attributes that AMP is directly responsible
           // for, such as "on".
           for (let i = 0; i < attribs.length; i += 2) {
-            const attrib = attribs[i];
-            if (WHITELISTED_ATTRS.includes(attrib)) {
+            const attrName = attribs[i];
+            if (WHITELISTED_ATTRS.includes(attrName)) {
               attribs[i + 1] = savedAttribs[i + 1];
-            } else if (attrib.search(WHITELISTED_ATTR_PREFIX_REGEX) == 0) {
+            } else if (attrName.search(WHITELISTED_ATTR_PREFIX_REGEX) == 0) {
               attribs[i + 1] = savedAttribs[i + 1];
-            } else if (WHITELISTED_ATTRS_BY_TAGS[tagName] &&
-                       WHITELISTED_ATTRS_BY_TAGS[tagName].includes(attrib)) {
+            } else if (
+              WHITELISTED_ATTRS_BY_TAGS[tagName] &&
+              WHITELISTED_ATTRS_BY_TAGS[tagName].includes(attrName)
+            ) {
               attribs[i + 1] = savedAttribs[i + 1];
             }
           }
@@ -164,8 +189,7 @@ function sanitizeWithCaja(html) {
               attribs[index] = '_top';
             }
           } else if (hasHref) {
-            attribs.push('target');
-            attribs.push('_top');
+            attribs.push('target', '_top');
           }
         }
       }
@@ -175,39 +199,52 @@ function sanitizeWithCaja(html) {
         }
         return;
       }
-      let emittedBindingMarker = false;
+      // Filter out bindings with empty attribute values.
+      const hasBindings = bindingAttribs.some(i => !!attribs[i + 1]);
+      if (hasBindings) {
+        // Set a custom attribute to identify elements with bindings.
+        // This is an optimization that avoids the need for a DOM scan later.
+        attribs.push('i-amphtml-binding', '');
+      }
+      // Elements with bindings and AMP elements must opt-out of DOM diffing.
+      // - Opt-out nodes with bindings because amp-bind scans newly
+      //   rendered elements and discards _all_ old elements _before_ diffing,
+      //   so preserving some old elements would cause loss of functionality.
+      // - Opt-out AMP elements because they don't support arbitrary mutation.
+      if (hasBindings || isAmpElement) {
+        if (diffing) {
+          attribs.push('i-amphtml-key', String(KEY_COUNTER++));
+        }
+      }
       emit('<');
       emit(tagName);
       for (let i = 0; i < attribs.length; i += 2) {
         const attrName = attribs[i];
         const attrValue = attribs[i + 1];
-        if (!isValidAttr(tagName, attrName, attrValue)) {
-          user().error(TAG, `Removing "${attrName}" attribute with invalid `
-              + `value in <${tagName} ${attrName}="${attrValue}">.`);
+        if (!isValidAttr(tagName, attrName, attrValue, doc, false)) {
+          user().error(
+            TAG,
+            `Removing "${attrName}" attribute with invalid ` +
+              `value in <${tagName} ${attrName}="${attrValue}">.`
+          );
           continue;
         }
         emit(' ');
-        if (isBinding[i]) {
-          emit('[' + attrName + ']');
+        if (bindingAttribs.includes(i) && !startsWith(attrName, BIND_PREFIX)) {
+          emit(`[${attrName}]`);
         } else {
           emit(attrName);
         }
         emit('="');
         if (attrValue) {
           // Rewrite attribute values unless this attribute is a binding.
-          // Bindings contain expressions not scalars and shouldn't be modified.
-          const rewrite = (isBinding[i])
+          // Bindings contain expressions and shouldn't be rewritten.
+          const rewrite = bindingAttribs.includes(i)
             ? attrValue
             : rewriteAttributeValue(tagName, attrName, attrValue);
           emit(htmlSanitizer.escapeAttrib(rewrite));
         }
         emit('"');
-        // Set a custom attribute to mark this element as containing a binding.
-        // This is an optimization that obviates the need for DOM scan later.
-        if (isBinding[i] && !emittedBindingMarker) {
-          emit(' i-amphtml-binding');
-          emittedBindingMarker = true;
-        }
       }
       emit('>');
     },
@@ -246,6 +283,7 @@ export function sanitizeTagsForTripleMustache(html) {
  * Tag policy for handling what is valid html in templates.
  * @param {string} tagName
  * @param {!Array<string>} attribs
+ * @return {?{tagName: string, attribs: !Array<string>}}
  */
 function tripleMustacheTagPolicy(tagName, attribs) {
   if (tagName == 'template') {
