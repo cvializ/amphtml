@@ -30,6 +30,8 @@ export class LabelFormats {
       month: 'long',
       year: 'numeric',
     });
+    /** @private @const {!Object<string, string>} */
+    this.monthMemo_ = dict();
 
     /** @private @const */
     this.day_ = new Intl.DateTimeFormat(locales, {day: 'numeric'});
@@ -53,6 +55,8 @@ export class LabelFormats {
       day: 'numeric',
       year: 'numeric',
     });
+    /** @private @const {!Object<string, string>} */
+    this.dateMemo_ = dict();
   }
 
   /**
@@ -62,7 +66,9 @@ export class LabelFormats {
    * @return {string}
    */
   month(date) {
-    return this.month_.format(date);
+    const key = date.getMonth();
+    const cached = this.monthMemo_[key];
+    return cached || (this.monthMemo_[key] = this.month_.format(date));
   }
 
   /**
@@ -112,10 +118,13 @@ export class LabelFormats {
   /**
    * Convert a Date to a string representing its date in the given locale.
    * Example: new Date(2018-01-01) -> "Tuesday, January 1, 2018"
+   * TODO: change the size of the cache to be x number of months of days
    * @param {!Date} date
    * @return {string}
    */
   date(date) {
-    return this.date_.format(date);
+    const key = Number(date);
+    const cached = this.dateMemo_[key];
+    return cached || (this.dateMemo_[key] = this.date_.format(date));
   }
 }

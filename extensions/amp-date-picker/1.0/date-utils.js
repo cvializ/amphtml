@@ -124,7 +124,16 @@ export function isBetweenInclusive(a, b, test) {
  * @return {boolean}
  */
 export function isSameDay(a, b) {
-  return Number(getDay(a)) == Number(getDay(b));
+  return getClampedDate(a) == getClampedDate(b);
+}
+
+/**
+ * Removes the hours, minutes, seconds and milliseconds from the date.
+ * @param {!Date} date
+ * @return {number}
+ */
+function getClampedDate(date) {
+  return Math.floor(Number(date) / 100000) * 100000;
 }
 
 /**
@@ -133,7 +142,9 @@ export function isSameDay(a, b) {
  * @return {!Date}
  */
 export function getDay(date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const clampedDate = new Date(date);
+  clampedDate.setHours(0, 0, 0, 0);
+  return clampedDate;
 }
 
 /**
